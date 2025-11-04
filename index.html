@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FactuManager - Sistema de Facturación</title>
+    <title>FactuManager Pro - Sistema de Facturación</title>
     
     <!-- Librería para generar PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -16,15 +16,22 @@
     <div class="container">
         <!-- ENCABEZADO -->
         <header>
-            <h1>📊 FactuManager</h1>
+            <h1>📊 FactuManager Pro</h1>
             <p>Sistema de Gestión de Facturación y Control de Stock</p>
+            <div class="header-actions">
+                <button class="btn-header" onclick="exportarDatos()">📥 Exportar Backup</button>
+                <button class="btn-header" onclick="document.getElementById('importFile').click()">📤 Importar Backup</button>
+                <button class="btn-header btn-danger-header" onclick="limpiarTodosLosDatos()">🗑️ Limpiar Todo</button>
+                <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importarDatos(event)">
+            </div>
         </header>
 
         <!-- PESTAÑAS DE NAVEGACIÓN -->
         <div class="tabs">
             <button class="tab active" onclick="openTab('productos')">📦 Productos</button>
             <button class="tab" onclick="openTab('movimientos')">💰 Movimientos</button>
-            <button class="tab" onclick="openTab('informes')">📄 Informes PDF</button>
+            <button class="tab" onclick="openTab('informes')">📄 Informes</button>
+            <button class="tab" onclick="openTab('configuracion')">⚙️ Configuración</button>
         </div>
 
         <!-- CONTENIDO PRINCIPAL -->
@@ -35,12 +42,12 @@
             <!-- ========================================== -->
             <div id="productos" class="tab-content active">
                 
-                <!-- Formulario para agregar productos -->
+                <!-- Formulario para agregar/editar productos -->
                 <div class="form-section">
-                    <h3>➕ Agregar Nuevo Producto</h3>
+                    <h3 id="tituloFormProducto">➕ Agregar Nuevo Producto</h3>
                     <div class="form-grid">
                         <div class="form-group">
-                            <label>Nombre del Producto</label>
+                            <label>Nombre del Producto *</label>
                             <input type="text" id="nombreProducto" placeholder="Ej: Zapatillas Nike">
                         </div>
                         <div class="form-group">
@@ -52,23 +59,31 @@
                             <input type="number" id="stockActual" placeholder="0" min="0">
                         </div>
                         <div class="form-group">
-                            <label>Precio de Costo ($)</label>
+                            <label>Precio de Costo ($) *</label>
                             <input type="number" id="precioCosto" placeholder="0.00" step="0.01" min="0">
                         </div>
                         <div class="form-group">
-                            <label>Precio de Venta ($)</label>
+                            <label>Precio de Venta ($) *</label>
                             <input type="number" id="precioVenta" placeholder="0.00" step="0.01" min="0">
                         </div>
                         <div class="form-group">
-                            <label>Unidades Vendidas</label>
-                            <input type="number" id="unidadesVendidas" placeholder="0" min="0">
+                            <label>Stock Mínimo (Alerta)</label>
+                            <input type="number" id="stockMinimo" placeholder="5" min="0">
                         </div>
                     </div>
-                    <button class="btn btn-primary" onclick="agregarProducto()">Agregar Producto</button>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-primary" onclick="agregarProducto()" id="btnGuardarProducto">💾 Guardar Producto</button>
+                        <button class="btn btn-secondary" onclick="cancelarEdicionProducto()" id="btnCancelarProducto" style="display: none;">❌ Cancelar</button>
+                    </div>
                 </div>
 
                 <!-- Área para mostrar alertas -->
                 <div id="alertProducto"></div>
+
+                <!-- Barra de búsqueda -->
+                <div class="search-section">
+                    <input type="text" id="buscarProducto" placeholder="🔍 Buscar producto por nombre..." onkeyup="buscarProductos()">
+                </div>
 
                 <!-- Tarjetas de estadísticas -->
                 <div class="stats">
@@ -81,36 +96,37 @@
                         <div class="value" id="totalVentas">$0</div>
                     </div>
                     <div class="stat-card">
-                        <h4>Stock Máximo</h4>
-                        <div class="value" id="maxStock">0</div>
+                        <h4>Productos Registrados</h4>
+                        <div class="value" id="cantidadProductos">0</div>
                     </div>
-                    <div class="stat-card">
-                        <h4>Stock Mínimo</h4>
-                        <div class="value" id="minStock">0</div>
+                    <div class="stat-card stat-card-warning">
+                        <h4>⚠️ Stock Bajo</h4>
+                        <div class="value" id="alertasStock">0</div>
                     </div>
                 </div>
 
                 <!-- Tabla de productos -->
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Producto</th>
-                            <th>Stock Inicial</th>
-                            <th>Stock Actual</th>
-                            <th>Precio Costo</th>
-                            <th>Precio Venta</th>
-                            <th>Ventas</th>
-                            <th>Total Ventas</th>
-                            <th>% Ganancia</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tablaProductos">
-                        <tr>
-                            <td colspan="9" style="text-align: center; color: #6c757d;">No hay productos registrados</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Stock Inicial</th>
+                                <th>Stock Actual</th>
+                                <th>Stock Mín.</th>
+                                <th>Precio Costo</th>
+                                <th>Precio Venta</th>
+                                <th>% Ganancia</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaProductos">
+                            <tr>
+                                <td colspan="8" style="text-align: center; color: #6c757d;">No hay productos registrados</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- ========================================== -->
@@ -120,91 +136,207 @@
                 
                 <!-- Formulario para registrar movimientos -->
                 <div class="form-section">
-                    <h3>➕ Registrar Movimiento</h3>
+                    <h3 id="tituloFormMovimiento">➕ Registrar Movimiento</h3>
                     <div class="form-grid">
                         <div class="form-group">
-                            <label>Fecha</label>
+                            <label>Fecha *</label>
                             <input type="date" id="fechaMovimiento">
                         </div>
                         <div class="form-group">
-                            <label>Descripción</label>
+                            <label>Descripción *</label>
                             <input type="text" id="descripcionMovimiento" placeholder="Ej: Venta de productos">
                         </div>
                         <div class="form-group">
-                            <label>Tipo</label>
+                            <label>Tipo *</label>
                             <select id="tipoMovimiento">
-                                <option value="ingreso">Ingreso</option>
-                                <option value="gasto">Gasto</option>
+                                <option value="ingreso">💰 Ingreso</option>
+                                <option value="gasto">💸 Gasto</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Monto ($)</label>
+                            <label>Monto ($) *</label>
                             <input type="number" id="montoMovimiento" placeholder="0.00" step="0.01" min="0">
                         </div>
                     </div>
-                    <button class="btn btn-primary" onclick="agregarMovimiento()">Registrar Movimiento</button>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-primary" onclick="agregarMovimiento()" id="btnGuardarMovimiento">💾 Guardar Movimiento</button>
+                        <button class="btn btn-secondary" onclick="cancelarEdicionMovimiento()" id="btnCancelarMovimiento" style="display: none;">❌ Cancelar</button>
+                    </div>
                 </div>
 
                 <!-- Área para mostrar alertas -->
                 <div id="alertMovimiento"></div>
 
+                <!-- Filtros -->
+                <div class="filter-section">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Filtrar por Tipo</label>
+                            <select id="filtroTipo" onchange="filtrarMovimientos()">
+                                <option value="todos">Todos</option>
+                                <option value="ingreso">Ingresos</option>
+                                <option value="gasto">Gastos</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Desde Fecha</label>
+                            <input type="date" id="filtroFechaDesde" onchange="filtrarMovimientos()">
+                        </div>
+                        <div class="form-group">
+                            <label>Hasta Fecha</label>
+                            <input type="date" id="filtroFechaHasta" onchange="filtrarMovimientos()">
+                        </div>
+                        <div class="form-group" style="display: flex; align-items: flex-end;">
+                            <button class="btn btn-secondary" onclick="limpiarFiltros()">🔄 Limpiar Filtros</button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Tarjetas de estadísticas financieras -->
                 <div class="stats">
-                    <div class="stat-card">
-                        <h4>Total Ingresos</h4>
+                    <div class="stat-card stat-card-success">
+                        <h4>💰 Total Ingresos</h4>
                         <div class="value" id="totalIngresos">$0</div>
                     </div>
-                    <div class="stat-card">
-                        <h4>Total Gastos</h4>
+                    <div class="stat-card stat-card-danger">
+                        <h4>💸 Total Gastos</h4>
                         <div class="value" id="totalGastos">$0</div>
                     </div>
                     <div class="stat-card">
-                        <h4>Saldo Actual</h4>
+                        <h4>💵 Saldo Actual</h4>
                         <div class="value" id="saldoActual">$0</div>
                     </div>
                 </div>
 
                 <!-- Tabla de movimientos -->
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Descripción</th>
-                            <th>Tipo</th>
-                            <th>Monto</th>
-                            <th>Saldo</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tablaMovimientos">
-                        <tr>
-                            <td colspan="6" style="text-align: center; color: #6c757d;">No hay movimientos registrados</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Descripción</th>
+                                <th>Tipo</th>
+                                <th>Monto</th>
+                                <th>Saldo</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaMovimientos">
+                            <tr>
+                                <td colspan="6" style="text-align: center; color: #6c757d;">No hay movimientos registrados</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- ========================================== -->
-            <!-- TAB 3: GENERACIÓN DE INFORMES PDF -->
+            <!-- TAB 3: INFORMES PDF -->
             <!-- ========================================== -->
             <div id="informes" class="tab-content">
-                <div class="pdf-section">
-                    <h3>📄 Generar Informe Semanal en PDF</h3>
-                    <p>Descarga un informe completo con todos los productos, movimientos y estadísticas</p>
-                    <button class="btn btn-success" onclick="generarPDF()">📥 Descargar Informe PDF</button>
+                <div class="form-section">
+                    <h3>📄 Generar Informe en PDF</h3>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Desde Fecha</label>
+                            <input type="date" id="pdfFechaDesde">
+                        </div>
+                        <div class="form-group">
+                            <label>Hasta Fecha</label>
+                            <input type="date" id="pdfFechaHasta">
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 20px;">
+                        <button class="btn btn-success" onclick="generarPDF()">📥 Descargar Informe PDF</button>
+                        <p style="color: #6c757d; margin-top: 10px; font-size: 0.9em;">
+                            Si no seleccionas fechas, se generará un informe completo con todos los datos
+                        </p>
+                    </div>
                 </div>
 
                 <div style="margin-top: 30px;">
-                    <h3 style="color: #667eea; margin-bottom: 20px;">Vista Previa del Informe</h3>
+                    <h3 style="color: #667eea; margin-bottom: 20px;">📊 Resumen General</h3>
+                    <div class="stats">
+                        <div class="stat-card">
+                            <h4>Total Productos</h4>
+                            <div class="value" id="resumenProductos">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h4>Total Movimientos</h4>
+                            <div class="value" id="resumenMovimientos">0</div>
+                        </div>
+                        <div class="stat-card stat-card-success">
+                            <h4>Balance Total</h4>
+                            <div class="value" id="resumenBalance">$0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h4>Valor Inventario</h4>
+                            <div class="value" id="resumenInventario">$0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 30px;">
+                    <h3 style="color: #667eea; margin-bottom: 20px;">ℹ️ Contenido del Informe</h3>
                     <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
-                        <p><strong>El informe incluirá:</strong></p>
-                        <ul style="margin-top: 10px; margin-left: 20px; color: #6c757d;">
-                            <li>Fecha de generación del informe</li>
-                            <li>Tabla completa de productos con stock y ventas</li>
-                            <li>Estadísticas generales de productos</li>
-                            <li>Tabla de movimientos (ingresos y gastos)</li>
-                            <li>Resumen financiero con totales</li>
+                        <p><strong>El informe PDF incluirá:</strong></p>
+                        <ul style="margin-top: 10px; margin-left: 20px; color: #6c757d; line-height: 1.8;">
+                            <li>📅 Fecha de generación y rango seleccionado</li>
+                            <li>📦 Tabla completa de productos con stock y precios</li>
+                            <li>📊 Estadísticas generales de productos</li>
+                            <li>💰 Tabla de movimientos (ingresos y gastos)</li>
+                            <li>💵 Resumen financiero con totales y balance</li>
+                            <li>⚠️ Alertas de productos con stock bajo</li>
                         </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- TAB 4: CONFIGURACIÓN -->
+            <!-- ========================================== -->
+            <div id="configuracion" class="tab-content">
+                <div class="form-section">
+                    <h3>⚙️ Configuración del Sistema</h3>
+                    
+                    <div class="config-section">
+                        <h4>💾 Gestión de Datos</h4>
+                        <p>Los datos se guardan automáticamente en tu navegador. Puedes hacer backup o limpiar todo.</p>
+                        <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
+                            <button class="btn btn-primary" onclick="exportarDatos()">📥 Exportar Backup (JSON)</button>
+                            <button class="btn btn-secondary" onclick="document.getElementById('importFile2').click()">📤 Importar Backup</button>
+                            <button class="btn btn-danger" onclick="limpiarTodosLosDatos()">🗑️ Limpiar Todos los Datos</button>
+                            <input type="file" id="importFile2" accept=".json" style="display: none;" onchange="importarDatos(event)">
+                        </div>
+                    </div>
+
+                    <div class="config-section">
+                        <h4>📊 Estadísticas del Sistema</h4>
+                        <div class="stats-info">
+                            <div class="stat-info-item">
+                                <span class="stat-label">Total de Productos:</span>
+                                <span class="stat-value" id="configTotalProductos">0</span>
+                            </div>
+                            <div class="stat-info-item">
+                                <span class="stat-label">Total de Movimientos:</span>
+                                <span class="stat-value" id="configTotalMovimientos">0</span>
+                            </div>
+                            <div class="stat-info-item">
+                                <span class="stat-label">Última actualización:</span>
+                                <span class="stat-value" id="configUltimaActualizacion">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="config-section">
+                        <h4>ℹ️ Información</h4>
+                        <p><strong>FactuManager Pro v2.0</strong></p>
+                        <p style="margin-top: 10px; color: #6c757d; line-height: 1.6;">
+                            Sistema de gestión de facturación y control de stock con persistencia de datos.
+                            Todas las funcionalidades están disponibles sin necesidad de conexión a internet.
+                        </p>
                     </div>
                 </div>
             </div>

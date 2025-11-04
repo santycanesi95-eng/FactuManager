@@ -2,14 +2,14 @@
 /* ESTILOS GENERALES */
 /* ========================================== */
 
-/* Reseteo de márgenes y paddings */
+
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
-/* Estilos del body (fondo degradado) */
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -49,6 +49,41 @@ header h1 {
 header p {
     opacity: 0.9;
     font-size: 1.1em;
+    margin-bottom: 15px;
+}
+
+.header-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 15px;
+}
+
+.btn-header {
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-header:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+.btn-danger-header {
+    background: rgba(220, 53, 69, 0.3);
+    border-color: rgba(220, 53, 69, 0.6);
+}
+
+.btn-danger-header:hover {
+    background: rgba(220, 53, 69, 0.5);
 }
 
 /* ========================================== */
@@ -101,7 +136,7 @@ header p {
     animation: fadeIn 0.3s;
 }
 
-/* Animación de entrada */
+
 @keyframes fadeIn {
     from { 
         opacity: 0; 
@@ -164,6 +199,39 @@ header p {
 }
 
 /* ========================================== */
+/* BARRA DE BÚSQUEDA */
+/* ========================================== */
+
+.search-section {
+    margin-bottom: 20px;
+}
+
+.search-section input {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid #dee2e6;
+    border-radius: 10px;
+    font-size: 1em;
+    transition: border 0.3s;
+}
+
+.search-section input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+/* ========================================== */
+/* FILTROS */
+/* ========================================== */
+
+.filter-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+/* ========================================== */
 /* BOTONES */
 /* ========================================== */
 
@@ -187,6 +255,16 @@ header p {
     box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
 }
 
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+}
+
 .btn-success {
     background: #28a745;
     color: white;
@@ -196,6 +274,17 @@ header p {
     background: #218838;
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+}
+
+.btn-warning {
+    background: #ffc107;
+    color: #212529;
+    padding: 8px 15px;
+    font-size: 0.9em;
+}
+
+.btn-warning:hover {
+    background: #e0a800;
 }
 
 .btn-danger {
@@ -209,9 +298,25 @@ header p {
     background: #c82333;
 }
 
+.btn-info {
+    background: #17a2b8;
+    color: white;
+    padding: 8px 15px;
+    font-size: 0.9em;
+}
+
+.btn-info:hover {
+    background: #138496;
+}
+
 /* ========================================== */
 /* TABLAS */
 /* ========================================== */
+
+.table-container {
+    overflow-x: auto;
+    margin-top: 20px;
+}
 
 table {
     width: 100%;
@@ -252,6 +357,12 @@ tbody tr:last-child {
     border-bottom: none;
 }
 
+.actions-cell {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
 /* ========================================== */
 /* TARJETAS DE ESTADÍSTICAS */
 /* ========================================== */
@@ -269,6 +380,18 @@ tbody tr:last-child {
     padding: 25px;
     border-radius: 10px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.stat-card-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.stat-card-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+}
+
+.stat-card-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #ff6b6b 100%);
 }
 
 .stat-card h4 {
@@ -293,6 +416,18 @@ tbody tr:last-child {
     border-radius: 8px;
     margin-bottom: 20px;
     font-weight: 500;
+    animation: slideIn 0.3s;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .alert-success {
@@ -307,25 +442,92 @@ tbody tr:last-child {
     border: 1px solid #f5c6cb;
 }
 
+.alert-warning {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.alert-info {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
 /* ========================================== */
-/* SECCIÓN DE PDF */
+/* CONFIGURACIÓN */
 /* ========================================== */
 
-.pdf-section {
-    background: #f8f9fa;
-    padding: 25px;
+.config-section {
+    background: white;
+    padding: 20px;
     border-radius: 10px;
-    text-align: center;
-}
-
-.pdf-section h3 {
-    color: #667eea;
-    margin-bottom: 15px;
-}
-
-.pdf-section p {
-    color: #6c757d;
     margin-bottom: 20px;
+    border: 2px solid #dee2e6;
+}
+
+.config-section h4 {
+    color: #667eea;
+    margin-bottom: 10px;
+    font-size: 1.2em;
+}
+
+.config-section p {
+    color: #6c757d;
+    line-height: 1.6;
+    margin-bottom: 10px;
+}
+
+.stats-info {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.stat-info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 5px;
+}
+
+.stat-label {
+    font-weight: 600;
+    color: #495057;
+}
+
+.stat-value {
+    color: #667eea;
+    font-weight: bold;
+}
+
+/* ========================================== */
+/* BADGES Y ETIQUETAS */
+/* ========================================== */
+
+.badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    font-weight: 600;
+}
+
+.badge-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.badge-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.badge-success {
+    background: #28a745;
+    color: white;
 }
 
 /* ========================================== */
@@ -342,6 +544,30 @@ tbody tr:last-child {
     }
     
     .tabs {
+        flex-direction: column;
+    }
+    
+    .header-actions {
+        flex-direction: column;
+    }
+    
+    .btn-header {
+        width: 100%;
+    }
+    
+    .stats {
+        grid-template-columns: 1fr;
+    }
+    
+    table {
+        font-size: 0.85em;
+    }
+    
+    th, td {
+        padding: 10px;
+    }
+    
+    .actions-cell {
         flex-direction: column;
     }
 }

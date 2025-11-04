@@ -2,265 +2,427 @@
 /* VARIABLES GLOBALES */
 /* ========================================== */
 
-// Arrays para almacenar productos y movimientos en memoria
 let productos = [];
 let movimientos = [];
+let productoEditando = null;
+let movimientoEditando = null;
 
-// Establecer fecha actual por defecto cuando carga la página
+/* ========================================== */
+/* INICIALIZACIÓN - CARGAR DATOS AL INICIAR */
+/* ========================================== */
+
 window.addEventListener('DOMContentLoaded', function() {
+    cargarDatosDesdeLocalStorage();
     document.getElementById('fechaMovimiento').valueAsDate = new Date();
+    document.getElementById('pdfFechaHasta').valueAsDate = new Date();
+    actualizarTodasLasVistas();
 });
+
+/* ========================================== */
+/* PERSISTENCIA CON LOCALSTORAGE */
+/* ========================================== */
+
+function guardarEnLocalStorage() {
+    const datos = {
+        productos: productos,
+        movimientos: movimientos,
+        ultimaActualizacion: new Date().toISOString()
+    };
+    localStorage.setItem('factumanager_datos', JSON.stringify(datos));
+    actualizarConfiguracion();
+}
+
+function cargarDatosDesdeLocalStorage() {
+    const datosGuardados = localStorage.getItem('factumanager_datos');
+    if (datosGuardados) {
+        try {
+            const datos = JSON.parse(datosGuardados);
+            productos = datos.productos || [];
+            movimientos = datos.movimientos || [];
+            console.log('✅ Datos cargados correctamente');
+        } catch (error) {
+            console.error('❌ Error al cargar datos:', error);
+            productos = [];
+            movimientos = [];
+        }
+    }
+}
+
+function limpiarTodosLosDatos() {
+    if (confirm('⚠️ ¿Estás seguro de que quieres ELIMINAR TODOS LOS DATOS?\n\nEsta acción no se puede deshacer.\n\nSe recomienda hacer un backup antes.')) {
+        if (confirm('🔴 ÚLTIMA CONFIRMACIÓN: ¿Realmente deseas borrar todo?')) {
+            localStorage.removeItem('factumanager_datos');
+            productos = [];
+            movimientos = [];
+            actualizarTodasLasVistas();
+            alert('✅ Todos los datos han sido eliminados.');
+        }
+    }
+}
+
+/* ========================================== */
+/* EXPORTAR E IMPORTAR DATOS (BACKUP) */
+/* ========================================== */
+
+function exportarDatos() {
+    const datos = {
+        productos: productos,
+        movimientos: movimientos,
+        fechaExportacion: new Date().toISOString(),
+        version: '2.0'
+    };
+    
+    const dataStr = JSON.stringify(datos, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `FactuManager_Backup_${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    
+    alert('✅ Backup exportado correctamente');
+}
+
+function importarDatos(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const datos = JSON.parse(e.target.result);
+            
+            if (confirm('⚠️ ¿Deseas REEMPLAZAR todos los datos actuales con el backup?\n\nLos datos actuales se perderán.')) {
+                productos = datos.productos || [];
+                movimientos = datos.movimientos || [];
+                guardarEnLocalStorage();
+                actualizarTodasLasVistas();
+                alert('✅ Datos importados correctamente');
+            }
+        } catch (error) {
+            alert('❌ Error al importar el archivo. Verifica que sea un backup válido.');
+            console.error(error);
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+}
 
 /* ========================================== */
 /* FUNCIONES PARA GESTIÓN DE PRODUCTOS */
 /* ========================================== */
 
-/**
- * Agrega un nuevo producto al sistema
- */
 function agregarProducto() {
-    // Obtener valores del formulario
     const nombre = document.getElementById('nombreProducto').value.trim();
     const stockInicial = parseInt(document.getElementById('stockInicial').value) || 0;
     const stockActual = parseInt(document.getElementById('stockActual').value) || 0;
     const precioCosto = parseFloat(document.getElementById('precioCosto').value) || 0;
     const precioVenta = parseFloat(document.getElementById('precioVenta').value) || 0;
-    const ventas = parseInt(document.getElementById('unidadesVendidas').value) || 0;
+    const stockMinimo = parseInt(document.getElementById('stockMinimo').value) || 5;
 
-    // Validación: el nombre es obligatorio
     if (!nombre) {
-        mostrarAlerta('alertProducto', 'Por favor ingrese el nombre del producto', 'danger');
+        mostrarAlerta('alertProducto', '⚠️ Por favor ingrese el nombre del producto', 'danger');
         return;
     }
 
-    // Crear objeto producto con todos los datos
-    const producto = {
-        id: Date.now(), // ID único basado en timestamp
-        nombre,
-        stockInicial,
-        stockActual,
-        precioCosto,
-        precioVenta,
-        ventas,
-        totalVentas: ventas * precioVenta, // Cálculo automático
-        porcentaje: precioCosto > 0 ? (((precioVenta - precioCosto) / precioCosto) * 100).toFixed(2) : 0 // % de ganancia
-    };
+    if (precioCosto <= 0 || precioVenta <= 0) {
+        mostrarAlerta('alertProducto', '⚠️ Los precios deben ser mayores a 0', 'danger');
+        return;
+    }
 
-    // Agregar producto al array
-    productos.push(producto);
-    
-    // Actualizar interfaz
+    if (productoEditando) {
+        // EDITAR producto existente
+        const index = productos.findIndex(p => p.id === productoEditando);
+        if (index !== -1) {
+            productos[index] = {
+                ...productos[index],
+                nombre,
+                stockInicial,
+                stockActual,
+                precioCosto,
+                precioVenta,
+                stockMinimo,
+                porcentaje: ((precioVenta - precioCosto) / precioCosto * 100).toFixed(2)
+            };
+            mostrarAlerta('alertProducto', '✅ Producto actualizado correctamente', 'success');
+        }
+        productoEditando = null;
+    } else {
+        // CREAR nuevo producto
+        const producto = {
+            id: Date.now(),
+            nombre,
+            stockInicial,
+            stockActual,
+            precioCosto,
+            precioVenta,
+            stockMinimo,
+            porcentaje: ((precioVenta - precioCosto) / precioCosto * 100).toFixed(2)
+        };
+        productos.push(producto);
+        mostrarAlerta('alertProducto', '✅ Producto agregado correctamente', 'success');
+    }
+
     limpiarFormularioProducto();
-    actualizarTablaProductos();
-    actualizarEstadisticasProductos();
-    mostrarAlerta('alertProducto', '✅ Producto agregado correctamente', 'success');
+    guardarEnLocalStorage();
+    actualizarTodasLasVistas();
 }
 
-/**
- * Elimina un producto por su ID
- */
+function editarProducto(id) {
+    const producto = productos.find(p => p.id === id);
+    if (!producto) return;
+
+    document.getElementById('nombreProducto').value = producto.nombre;
+    document.getElementById('stockInicial').value = producto.stockInicial;
+    document.getElementById('stockActual').value = producto.stockActual;
+    document.getElementById('precioCosto').value = producto.precioCosto;
+    document.getElementById('precioVenta').value = producto.precioVenta;
+    document.getElementById('stockMinimo').value = producto.stockMinimo || 5;
+
+    productoEditando = id;
+    document.getElementById('tituloFormProducto').textContent = '✏️ Editar Producto';
+    document.getElementById('btnGuardarProducto').textContent = '💾 Actualizar Producto';
+    document.getElementById('btnCancelarProducto').style.display = 'inline-block';
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function cancelarEdicionProducto() {
+    productoEditando = null;
+    limpiarFormularioProducto();
+    document.getElementById('tituloFormProducto').textContent = '➕ Agregar Nuevo Producto';
+    document.getElementById('btnGuardarProducto').textContent = '💾 Guardar Producto';
+    document.getElementById('btnCancelarProducto').style.display = 'none';
+}
+
 function eliminarProducto(id) {
     if (confirm('¿Estás seguro de eliminar este producto?')) {
-        // Filtrar el array para quitar el producto con ese ID
         productos = productos.filter(p => p.id !== id);
-        
-        // Actualizar interfaz
-        actualizarTablaProductos();
-        actualizarEstadisticasProductos();
+        guardarEnLocalStorage();
+        actualizarTodasLasVistas();
         mostrarAlerta('alertProducto', '✅ Producto eliminado correctamente', 'success');
     }
 }
 
-/**
- * Actualiza la tabla de productos en el HTML
- */
-function actualizarTablaProductos() {
+function buscarProductos() {
+    const busqueda = document.getElementById('buscarProducto').value.toLowerCase();
+    const productosFiltrados = productos.filter(p => 
+        p.nombre.toLowerCase().includes(busqueda)
+    );
+    actualizarTablaProductos(productosFiltrados);
+}
+
+function actualizarTablaProductos(listaProductos = productos) {
     const tbody = document.getElementById('tablaProductos');
     
-    // Si no hay productos, mostrar mensaje
-    if (productos.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: #6c757d;">No hay productos registrados</td></tr>';
+    if (listaProductos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #6c757d;">No hay productos registrados</td></tr>';
         return;
     }
 
-    // Generar filas de la tabla con los productos
-    tbody.innerHTML = productos.map(p => `
-        <tr>
-            <td><strong>${p.nombre}</strong></td>
-            <td>${p.stockInicial}</td>
-            <td>${p.stockActual}</td>
-            <td>$${p.precioCosto.toFixed(2)}</td>
-            <td>$${p.precioVenta.toFixed(2)}</td>
-            <td>${p.ventas}</td>
-            <td><strong>$${p.totalVentas.toFixed(2)}</strong></td>
-            <td><strong>${p.porcentaje}%</strong></td>
-            <td><button class="btn btn-danger" onclick="eliminarProducto(${p.id})">Eliminar</button></td>
-        </tr>
-    `).join('');
+    tbody.innerHTML = listaProductos.map(p => {
+        const alerta = p.stockActual <= p.stockMinimo ? '<span class="badge badge-danger">⚠️ Stock Bajo</span>' : '';
+        return `
+            <tr>
+                <td><strong>${p.nombre}</strong> ${alerta}</td>
+                <td>${p.stockInicial}</td>
+                <td>${p.stockActual}</td>
+                <td>${p.stockMinimo || 5}</td>
+                <td>$${p.precioCosto.toFixed(2)}</td>
+                <td>$${p.precioVenta.toFixed(2)}</td>
+                <td><strong>${p.porcentaje}%</strong></td>
+                <td>
+                    <div class="actions-cell">
+                        <button class="btn btn-warning" onclick="editarProducto(${p.id})">✏️ Editar</button>
+                        <button class="btn btn-danger" onclick="eliminarProducto(${p.id})">🗑️</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
 }
 
-/**
- * Calcula y actualiza las estadísticas de productos
- */
 function actualizarEstadisticasProductos() {
-    // Sumar todas las unidades en stock
     const totalUnidades = productos.reduce((sum, p) => sum + p.stockActual, 0);
-    
-    // Sumar todas las ventas totales en dinero
-    const totalVentas = productos.reduce((sum, p) => sum + p.totalVentas, 0);
-    
-    // Extraer solo los stocks para calcular máximo y mínimo
-    const stocks = productos.map(p => p.stockActual);
-    const maxStock = stocks.length > 0 ? Math.max(...stocks) : 0;
-    const minStock = stocks.length > 0 ? Math.min(...stocks) : 0;
+    const valorInventario = productos.reduce((sum, p) => sum + (p.stockActual * p.precioCosto), 0);
+    const productosStockBajo = productos.filter(p => p.stockActual <= p.stockMinimo).length;
 
-    // Actualizar valores en el HTML
     document.getElementById('totalUnidades').textContent = totalUnidades;
-    document.getElementById('totalVentas').textContent = '$' + totalVentas.toFixed(2);
-    document.getElementById('maxStock').textContent = maxStock;
-    document.getElementById('minStock').textContent = minStock;
+    document.getElementById('totalVentas').textContent = '$0'; // Se actualizará cuando implementemos ventas
+    document.getElementById('cantidadProductos').textContent = productos.length;
+    document.getElementById('alertasStock').textContent = productosStockBajo;
 }
 
-/**
- * Limpia el formulario de productos
- */
 function limpiarFormularioProducto() {
     document.getElementById('nombreProducto').value = '';
     document.getElementById('stockInicial').value = '';
     document.getElementById('stockActual').value = '';
     document.getElementById('precioCosto').value = '';
     document.getElementById('precioVenta').value = '';
-    document.getElementById('unidadesVendidas').value = '';
+    document.getElementById('stockMinimo').value = '';
 }
 
 /* ========================================== */
 /* FUNCIONES PARA GESTIÓN DE MOVIMIENTOS */
 /* ========================================== */
 
-/**
- * Registra un nuevo movimiento (ingreso o gasto)
- */
 function agregarMovimiento() {
-    // Obtener valores del formulario
     const fecha = document.getElementById('fechaMovimiento').value;
     const descripcion = document.getElementById('descripcionMovimiento').value.trim();
     const tipo = document.getElementById('tipoMovimiento').value;
     const monto = parseFloat(document.getElementById('montoMovimiento').value) || 0;
 
-    // Validación de campos
     if (!fecha || !descripcion || monto <= 0) {
-        mostrarAlerta('alertMovimiento', 'Por favor complete todos los campos correctamente', 'danger');
+        mostrarAlerta('alertMovimiento', '⚠️ Por favor complete todos los campos correctamente', 'danger');
         return;
     }
 
-    // Crear objeto movimiento
-    const movimiento = {
-        id: Date.now(),
-        fecha,
-        descripcion,
-        tipo,
-        monto,
-        saldo: calcularSaldoNuevo(monto, tipo) // Calcula el saldo acumulado
-    };
+    if (movimientoEditando) {
+        // EDITAR movimiento existente
+        const index = movimientos.findIndex(m => m.id === movimientoEditando);
+        if (index !== -1) {
+            movimientos[index] = {
+                ...movimientos[index],
+                fecha,
+                descripcion,
+                tipo,
+                monto
+            };
+            movimientos.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+            recalcularSaldos();
+            mostrarAlerta('alertMovimiento', '✅ Movimiento actualizado correctamente', 'success');
+        }
+        movimientoEditando = null;
+    } else {
+        // CREAR nuevo movimiento
+        const movimiento = {
+            id: Date.now(),
+            fecha,
+            descripcion,
+            tipo,
+            monto,
+            saldo: 0
+        };
+        movimientos.push(movimiento);
+        movimientos.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+        recalcularSaldos();
+        mostrarAlerta('alertMovimiento', '✅ Movimiento registrado correctamente', 'success');
+    }
 
-    // Agregar movimiento al array
-    movimientos.push(movimiento);
-    
-    // Actualizar interfaz
     limpiarFormularioMovimiento();
-    actualizarTablaMovimientos();
-    actualizarEstadisticasMovimientos();
-    mostrarAlerta('alertMovimiento', '✅ Movimiento registrado correctamente', 'success');
+    guardarEnLocalStorage();
+    actualizarTodasLasVistas();
 }
 
-/**
- * Calcula el nuevo saldo basado en el movimiento anterior
- */
-function calcularSaldoNuevo(monto, tipo) {
-    // Obtener saldo del último movimiento (o 0 si es el primero)
-    const saldoAnterior = movimientos.length > 0 ? movimientos[movimientos.length - 1].saldo : 0;
-    
-    // Si es ingreso suma, si es gasto resta
-    return tipo === 'ingreso' ? saldoAnterior + monto : saldoAnterior - monto;
+function editarMovimiento(id) {
+    const movimiento = movimientos.find(m => m.id === id);
+    if (!movimiento) return;
+
+    document.getElementById('fechaMovimiento').value = movimiento.fecha;
+    document.getElementById('descripcionMovimiento').value = movimiento.descripcion;
+    document.getElementById('tipoMovimiento').value = movimiento.tipo;
+    document.getElementById('montoMovimiento').value = movimiento.monto;
+
+    movimientoEditando = id;
+    document.getElementById('tituloFormMovimiento').textContent = '✏️ Editar Movimiento';
+    document.getElementById('btnGuardarMovimiento').textContent = '💾 Actualizar Movimiento';
+    document.getElementById('btnCancelarMovimiento').style.display = 'inline-block';
+
+    openTab('movimientos');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-/**
- * Elimina un movimiento por su ID
- */
+function cancelarEdicionMovimiento() {
+    movimientoEditando = null;
+    limpiarFormularioMovimiento();
+    document.getElementById('tituloFormMovimiento').textContent = '➕ Registrar Movimiento';
+    document.getElementById('btnGuardarMovimiento').textContent = '💾 Guardar Movimiento';
+    document.getElementById('btnCancelarMovimiento').style.display = 'none';
+}
+
 function eliminarMovimiento(id) {
     if (confirm('¿Estás seguro de eliminar este movimiento?')) {
-        // Filtrar el array para quitar el movimiento
         movimientos = movimientos.filter(m => m.id !== id);
-        
-        // Recalcular todos los saldos ya que dependen uno del otro
         recalcularSaldos();
-        
-        // Actualizar interfaz
-        actualizarTablaMovimientos();
-        actualizarEstadisticasMovimientos();
+        guardarEnLocalStorage();
+        actualizarTodasLasVistas();
         mostrarAlerta('alertMovimiento', '✅ Movimiento eliminado correctamente', 'success');
     }
 }
 
-/**
- * Recalcula todos los saldos después de eliminar un movimiento
- */
 function recalcularSaldos() {
     let saldoAcumulado = 0;
     movimientos.forEach(m => {
-        // Recalcular saldo para cada movimiento
         saldoAcumulado = m.tipo === 'ingreso' ? saldoAcumulado + m.monto : saldoAcumulado - m.monto;
         m.saldo = saldoAcumulado;
     });
 }
 
-/**
- * Actualiza la tabla de movimientos en el HTML
- */
-function actualizarTablaMovimientos() {
+function filtrarMovimientos() {
+    const tipo = document.getElementById('filtroTipo').value;
+    const fechaDesde = document.getElementById('filtroFechaDesde').value;
+    const fechaHasta = document.getElementById('filtroFechaHasta').value;
+
+    let movimientosFiltrados = [...movimientos];
+
+    if (tipo !== 'todos') {
+        movimientosFiltrados = movimientosFiltrados.filter(m => m.tipo === tipo);
+    }
+
+    if (fechaDesde) {
+        movimientosFiltrados = movimientosFiltrados.filter(m => m.fecha >= fechaDesde);
+    }
+
+    if (fechaHasta) {
+        movimientosFiltrados = movimientosFiltrados.filter(m => m.fecha <= fechaHasta);
+    }
+
+    actualizarTablaMovimientos(movimientosFiltrados);
+}
+
+function limpiarFiltros() {
+    document.getElementById('filtroTipo').value = 'todos';
+    document.getElementById('filtroFechaDesde').value = '';
+    document.getElementById('filtroFechaHasta').value = '';
+    actualizarTablaMovimientos();
+}
+
+function actualizarTablaMovimientos(listaMovimientos = movimientos) {
     const tbody = document.getElementById('tablaMovimientos');
     
-    // Si no hay movimientos, mostrar mensaje
-    if (movimientos.length === 0) {
+    if (listaMovimientos.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #6c757d;">No hay movimientos registrados</td></tr>';
         return;
     }
 
-    // Generar filas de la tabla
-    tbody.innerHTML = movimientos.map(m => `
+    tbody.innerHTML = listaMovimientos.map(m => `
         <tr>
             <td>${formatearFecha(m.fecha)}</td>
             <td>${m.descripcion}</td>
-            <td><span style="color: ${m.tipo === 'ingreso' ? '#28a745' : '#dc3545'}; font-weight: bold;">${m.tipo.toUpperCase()}</span></td>
+            <td><span style="color: ${m.tipo === 'ingreso' ? '#28a745' : '#dc3545'}; font-weight: bold;">${m.tipo === 'ingreso' ? '💰' : '💸'} ${m.tipo.toUpperCase()}</span></td>
             <td style="color: ${m.tipo === 'ingreso' ? '#28a745' : '#dc3545'}; font-weight: bold;">$${m.monto.toFixed(2)}</td>
             <td><strong>$${m.saldo.toFixed(2)}</strong></td>
-            <td><button class="btn btn-danger" onclick="eliminarMovimiento(${m.id})">Eliminar</button></td>
+            <td>
+                <div class="actions-cell">
+                    <button class="btn btn-warning" onclick="editarMovimiento(${m.id})">✏️</button>
+                    <button class="btn btn-danger" onclick="eliminarMovimiento(${m.id})">🗑️</button>
+                </div>
+            </td>
         </tr>
     `).join('');
 }
 
-/**
- * Calcula y actualiza las estadísticas de movimientos
- */
 function actualizarEstadisticasMovimientos() {
-    // Filtrar y sumar solo los ingresos
     const totalIngresos = movimientos.filter(m => m.tipo === 'ingreso').reduce((sum, m) => sum + m.monto, 0);
-    
-    // Filtrar y sumar solo los gastos
     const totalGastos = movimientos.filter(m => m.tipo === 'gasto').reduce((sum, m) => sum + m.monto, 0);
-    
-    // Obtener el saldo del último movimiento
     const saldoActual = movimientos.length > 0 ? movimientos[movimientos.length - 1].saldo : 0;
 
-    // Actualizar valores en el HTML
     document.getElementById('totalIngresos').textContent = '$' + totalIngresos.toFixed(2);
     document.getElementById('totalGastos').textContent = '$' + totalGastos.toFixed(2);
     document.getElementById('saldoActual').textContent = '$' + saldoActual.toFixed(2);
 }
 
-/**
- * Limpia el formulario de movimientos
- */
 function limpiarFormularioMovimiento() {
     document.getElementById('fechaMovimiento').valueAsDate = new Date();
     document.getElementById('descripcionMovimiento').value = '';
@@ -268,9 +430,6 @@ function limpiarFormularioMovimiento() {
     document.getElementById('montoMovimiento').value = '';
 }
 
-/**
- * Convierte fecha de formato YYYY-MM-DD a DD/MM/YYYY
- */
 function formatearFecha(fecha) {
     const [year, month, day] = fecha.split('-');
     return `${day}/${month}/${year}`;
@@ -280,82 +439,113 @@ function formatearFecha(fecha) {
 /* FUNCIONES GENERALES */
 /* ========================================== */
 
-/**
- * Cambia entre pestañas (tabs)
- */
 function openTab(tabName) {
     const tabs = document.querySelectorAll('.tab');
     const contents = document.querySelectorAll('.tab-content');
 
-    // Remover clase "active" de todas las pestañas y contenidos
     tabs.forEach(tab => tab.classList.remove('active'));
     contents.forEach(content => content.classList.remove('active'));
 
-    // Agregar clase "active" a la pestaña clickeada
-    event.target.classList.add('active');
+    document.querySelector(`[onclick="openTab('${tabName}')"]`).classList.add('active');
     document.getElementById(tabName).classList.add('active');
+
+    if (tabName === 'configuracion') {
+        actualizarConfiguracion();
+    }
 }
 
-/**
- * Muestra alertas temporales al usuario
- */
 function mostrarAlerta(elementoId, mensaje, tipo) {
     const alertDiv = document.getElementById(elementoId);
     alertDiv.innerHTML = `<div class="alert alert-${tipo}">${mensaje}</div>`;
-    
-    // Ocultar alerta después de 3 segundos
     setTimeout(() => {
         alertDiv.innerHTML = '';
-    }, 3000);
+    }, 4000);
+}
+
+function actualizarTodasLasVistas() {
+    actualizarTablaProductos();
+    actualizarEstadisticasProductos();
+    actualizarTablaMovimientos();
+    actualizarEstadisticasMovimientos();
+    actualizarResumenInformes();
+}
+
+function actualizarConfiguracion() {
+    document.getElementById('configTotalProductos').textContent = productos.length;
+    document.getElementById('configTotalMovimientos').textContent = movimientos.length;
+    
+    const datosGuardados = localStorage.getItem('factumanager_datos');
+    if (datosGuardados) {
+        const datos = JSON.parse(datosGuardados);
+        const fecha = new Date(datos.ultimaActualizacion);
+        document.getElementById('configUltimaActualizacion').textContent = fecha.toLocaleString('es-AR');
+    }
+}
+
+function actualizarResumenInformes() {
+    document.getElementById('resumenProductos').textContent = productos.length;
+    document.getElementById('resumenMovimientos').textContent = movimientos.length;
+    
+    const balance = movimientos.length > 0 ? movimientos[movimientos.length - 1].saldo : 0;
+    document.getElementById('resumenBalance').textContent = '$' + balance.toFixed(2);
+    
+    const valorInventario = productos.reduce((sum, p) => sum + (p.stockActual * p.precioCosto), 0);
+    document.getElementById('resumenInventario').textContent = '$' + valorInventario.toFixed(2);
 }
 
 /* ========================================== */
 /* GENERACIÓN DE PDF */
 /* ========================================== */
 
-/**
- * Genera y descarga un PDF con todos los datos
- */
 function generarPDF() {
-    // Inicializar jsPDF
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    // ========== TÍTULO PRINCIPAL ==========
+    const fechaDesde = document.getElementById('pdfFechaDesde').value;
+    const fechaHasta = document.getElementById('pdfFechaHasta').value;
+
+    let productosFiltrados = [...productos];
+    let movimientosFiltrados = [...movimientos];
+
+    if (fechaDesde && fechaHasta) {
+        movimientosFiltrados = movimientos.filter(m => m.fecha >= fechaDesde && m.fecha <= fechaHasta);
+    }
+
+    // TÍTULO
     doc.setFontSize(22);
     doc.setTextColor(102, 126, 234);
-    doc.text('FactuManager - Informe Semanal', 105, 20, { align: 'center' });
+    doc.text('FactuManager Pro - Informe', 105, 20, { align: 'center' });
 
-    // Fecha del informe
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-AR')}`, 105, 28, { align: 'center' });
+    let subtitulo = `Generado: ${new Date().toLocaleDateString('es-AR')}`;
+    if (fechaDesde && fechaHasta) {
+        subtitulo += ` | Período: ${formatearFecha(fechaDesde)} - ${formatearFecha(fechaHasta)}`;
+    }
+    doc.text(subtitulo, 105, 28, { align: 'center' });
 
-    let yPos = 40; // Posición vertical inicial
+    let yPos = 40;
 
-    // ========== SECCIÓN 1: PRODUCTOS ==========
+    // PRODUCTOS
     doc.setFontSize(16);
     doc.setTextColor(102, 126, 234);
     doc.text('📦 Productos', 14, yPos);
     yPos += 10;
 
-    if (productos.length > 0) {
-        // Preparar datos de productos para la tabla
-        const productosData = productos.map(p => [
+    if (productosFiltrados.length > 0) {
+        const productosData = productosFiltrados.map(p => [
             p.nombre,
             p.stockInicial,
             p.stockActual,
+            p.stockMinimo || 5,
             '$' + p.precioCosto.toFixed(2),
             '$' + p.precioVenta.toFixed(2),
-            p.ventas,
-            '$' + p.totalVentas.toFixed(2),
             p.porcentaje + '%'
         ]);
 
-        // Crear tabla de productos
         doc.autoTable({
             startY: yPos,
-            head: [['Producto', 'Stock Ini.', 'Stock Act.', 'P. Costo', 'P. Venta', 'Ventas', 'Total', '%']],
+            head: [['Producto', 'Stock Ini.', 'Stock Act.', 'Stock Mín.', 'P. Costo', 'P. Venta', '%']],
             body: productosData,
             theme: 'grid',
             headStyles: { fillColor: [102, 126, 234] },
@@ -364,20 +554,14 @@ function generarPDF() {
 
         yPos = doc.lastAutoTable.finalY + 10;
 
-        // Calcular estadísticas de productos
-        const totalUnidades = productos.reduce((sum, p) => sum + p.stockActual, 0);
-        const totalVentas = productos.reduce((sum, p) => sum + p.totalVentas, 0);
-        const stocks = productos.map(p => p.stockActual);
-        const maxStock = Math.max(...stocks);
-        const minStock = Math.min(...stocks);
+        const totalUnidades = productosFiltrados.reduce((sum, p) => sum + p.stockActual, 0);
+        const valorInventario = productosFiltrados.reduce((sum, p) => sum + (p.stockActual * p.precioCosto), 0);
 
-        // Mostrar estadísticas
         doc.setFontSize(10);
         doc.setTextColor(50);
-        doc.text(`Total Unidades: ${totalUnidades}`, 14, yPos);
-        doc.text(`Total Ventas: $${totalVentas.toFixed(2)}`, 70, yPos);
-        doc.text(`Stock MAX: ${maxStock}`, 130, yPos);
-        doc.text(`Stock MIN: ${minStock}`, 170, yPos);
+        doc.text(`Total Productos: ${productosFiltrados.length}`, 14, yPos);
+        doc.text(`Total Unidades: ${totalUnidades}`, 80, yPos);
+        doc.text(`Valor Inventario: $${valorInventario.toFixed(2)}`, 145, yPos);
         yPos += 15;
     } else {
         doc.setFontSize(10);
@@ -386,15 +570,14 @@ function generarPDF() {
         yPos += 15;
     }
 
-    // ========== SECCIÓN 2: MOVIMIENTOS ==========
+    // MOVIMIENTOS
     doc.setFontSize(16);
     doc.setTextColor(102, 126, 234);
-    doc.text('💰 Movimientos de Caja', 14, yPos);
+    doc.text('💰 Movimientos', 14, yPos);
     yPos += 10;
 
-    if (movimientos.length > 0) {
-        // Preparar datos de movimientos para la tabla
-        const movimientosData = movimientos.map(m => [
+    if (movimientosFiltrados.length > 0) {
+        const movimientosData = movimientosFiltrados.map(m => [
             formatearFecha(m.fecha),
             m.descripcion,
             m.tipo.toUpperCase(),
@@ -402,7 +585,7 @@ function generarPDF() {
             '$' + m.saldo.toFixed(2)
         ]);
 
-        // Crear tabla de movimientos
+        
         doc.autoTable({
             startY: yPos,
             head: [['Fecha', 'Descripción', 'Tipo', 'Monto', 'Saldo']],
@@ -414,25 +597,21 @@ function generarPDF() {
 
         yPos = doc.lastAutoTable.finalY + 10;
 
-        // Calcular estadísticas de movimientos
-        const totalIngresos = movimientos.filter(m => m.tipo === 'ingreso').reduce((sum, m) => sum + m.monto, 0);
-        const totalGastos = movimientos.filter(m => m.tipo === 'gasto').reduce((sum, m) => sum + m.monto, 0);
-        const saldoFinal = movimientos[movimientos.length - 1].saldo;
+        const totalIngresos = movimientosFiltrados.filter(m => m.tipo === 'ingreso').reduce((sum, m) => sum + m.monto, 0);
+        const totalGastos = movimientosFiltrados.filter(m => m.tipo === 'gasto').reduce((sum, m) => sum + m.monto, 0);
+        const saldoFinal = movimientosFiltrados.length > 0 ? movimientosFiltrados[movimientosFiltrados.length - 1].saldo : 0;
 
-        // Mostrar estadísticas
         doc.setFontSize(10);
         doc.setTextColor(50);
-        doc.text(`Total Ingresos: $${totalIngresos.toFixed(2)}`, 14, yPos);
-        doc.text(`Total Gastos: $${totalGastos.toFixed(2)}`, 80, yPos);
-        doc.text(`Saldo Final: $${saldoFinal.toFixed(2)}`, 145, yPos);
+        doc.text(`Ingresos: $${totalIngresos.toFixed(2)}`, 14, yPos);
+        doc.text(`Gastos: $${totalGastos.toFixed(2)}`, 80, yPos);
+        doc.text(`Balance: $${saldoFinal.toFixed(2)}`, 145, yPos);
     } else {
         doc.setFontSize(10);
         doc.setTextColor(100);
         doc.text('No hay movimientos registrados', 14, yPos);
     }
 
-    // ========== GUARDAR PDF ==========
-    doc.save(`FactuManager_Informe_${new Date().toLocaleDateString('es-AR').replace(/\//g, '-')}.pdf`);
-    
+    doc.save(`FactuManager_Informe_${new Date().toISOString().split('T')[0]}.pdf`);
     alert('✅ PDF generado correctamente!');
 }
