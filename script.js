@@ -249,7 +249,6 @@ function actualizarEstadisticasProductos() {
     const productosStockBajo = productos.filter(p => p.stockActual <= p.stockMinimo).length;
 
     document.getElementById('totalUnidades').textContent = totalUnidades;
-    document.getElementById('totalVentas').textContent = '$0'; // Se actualizará cuando implementemos ventas
     document.getElementById('cantidadProductos').textContent = productos.length;
     document.getElementById('alertasStock').textContent = productosStockBajo;
 }
