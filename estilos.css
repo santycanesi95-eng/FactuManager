@@ -15,10 +15,6 @@ body {
     padding: 20px;
 }
 
-/* ========================================== */
-/* CONTENEDOR PRINCIPAL */
-/* ========================================== */
-
 .container {
     max-width: 1400px;
     margin: 0 auto;
@@ -27,10 +23,6 @@ body {
     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
     overflow: hidden;
 }
-
-/* ========================================== */
-/* ENCABEZADO */
-/* ========================================== */
 
 header {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -84,10 +76,6 @@ header p {
     background: rgba(220, 53, 69, 0.5);
 }
 
-/* ========================================== */
-/* PESTAÑAS DE NAVEGACIÓN */
-/* ========================================== */
-
 .tabs {
     display: flex;
     background: #f8f9fa;
@@ -120,10 +108,6 @@ header p {
     border-bottom: 3px solid #667eea;
 }
 
-/* ========================================== */
-/* CONTENIDO DE LAS PESTAÑAS */
-/* ========================================== */
-
 .content {
     padding: 30px;
 }
@@ -138,19 +122,9 @@ header p {
 }
 
 @keyframes fadeIn {
-    from { 
-        opacity: 0; 
-        transform: translateY(10px); 
-    }
-    to { 
-        opacity: 1; 
-        transform: translateY(0); 
-    }
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
-
-/* ========================================== */
-/* FORMULARIOS */
-/* ========================================== */
 
 .form-section {
     background: #f8f9fa;
@@ -198,10 +172,6 @@ header p {
     border-color: #667eea;
 }
 
-/* ========================================== */
-/* BARRA DE BÚSQUEDA */
-/* ========================================== */
-
 .search-section {
     margin-bottom: 20px;
 }
@@ -219,21 +189,6 @@ header p {
     outline: none;
     border-color: #667eea;
 }
-
-/* ========================================== */
-/* FILTROS */
-/* ========================================== */
-
-.filter-section {
-    background: #f8f9fa;
-    padding: 20px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-}
-
-/* ========================================== */
-/* BOTONES */
-/* ========================================== */
 
 .btn {
     padding: 12px 30px;
@@ -298,21 +253,6 @@ header p {
     background: #c82333;
 }
 
-.btn-info {
-    background: #17a2b8;
-    color: white;
-    padding: 8px 15px;
-    font-size: 0.9em;
-}
-
-.btn-info:hover {
-    background: #138496;
-}
-
-/* ========================================== */
-/* TABLAS */
-/* ========================================== */
-
 .table-container {
     overflow-x: auto;
     margin-top: 20px;
@@ -363,10 +303,6 @@ tbody tr:last-child {
     flex-wrap: wrap;
 }
 
-/* ========================================== */
-/* TARJETAS DE ESTADÍSTICAS */
-/* ========================================== */
-
 .stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -394,7 +330,6 @@ tbody tr:last-child {
     background: linear-gradient(135deg, #ffc107 0%, #ff6b6b 100%);
 }
 
-/* NUEVOS COLORES PARA TIPOS DE MOVIMIENTOS */
 .stat-card-efectivo {
     background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
 }
@@ -424,10 +359,6 @@ tbody tr:last-child {
     font-weight: bold;
 }
 
-/* ========================================== */
-/* ALERTAS */
-/* ========================================== */
-
 .alert {
     padding: 15px 20px;
     border-radius: 8px;
@@ -437,14 +368,8 @@ tbody tr:last-child {
 }
 
 @keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .alert-success {
@@ -458,22 +383,6 @@ tbody tr:last-child {
     color: #721c24;
     border: 1px solid #f5c6cb;
 }
-
-.alert-warning {
-    background: #fff3cd;
-    color: #856404;
-    border: 1px solid #ffeaa7;
-}
-
-.alert-info {
-    background: #d1ecf1;
-    color: #0c5460;
-    border: 1px solid #bee5eb;
-}
-
-/* ========================================== */
-/* CONFIGURACIÓN */
-/* ========================================== */
 
 .config-section {
     background: white;
@@ -520,10 +429,6 @@ tbody tr:last-child {
     font-weight: bold;
 }
 
-/* ========================================== */
-/* BADGES Y ETIQUETAS */
-/* ========================================== */
-
 .badge {
     display: inline-block;
     padding: 4px 8px;
@@ -537,59 +442,36 @@ tbody tr:last-child {
     color: white;
 }
 
-.badge-warning {
-    background: #ffc107;
-    color: #212529;
-}
-
-.badge-success {
-    background: #28a745;
-    color: white;
-}
-
-/* ========================================== */
-/* RESPONSIVE - ADAPTACIÓN A CELULARES */
-/* ========================================== */
-
 @media (max-width: 768px) {
     .form-grid {
         grid-template-columns: 1fr;
     }
-    
     header h1 {
         font-size: 1.8em;
     }
-    
     .tabs {
         flex-wrap: nowrap;
         overflow-x: auto;
     }
-    
     .tab {
         font-size: 0.9em;
         padding: 15px 10px;
     }
-    
     .header-actions {
         flex-direction: column;
     }
-    
     .btn-header {
         width: 100%;
     }
-    
     .stats {
         grid-template-columns: 1fr;
     }
-    
     table {
         font-size: 0.85em;
     }
-    
     th, td {
         padding: 10px;
     }
-    
     .actions-cell {
         flex-direction: column;
     }

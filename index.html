@@ -31,7 +31,6 @@
             <button class="tab active" onclick="openTab('productos')">📦 Productos</button>
             <button class="tab" onclick="openTab('ventas')">🛒 Ventas</button>
             <button class="tab" onclick="openTab('compras')">📥 Compras</button>
-            <button class="tab" onclick="openTab('movimientos')">💰 Movimientos</button>
             <button class="tab" onclick="openTab('informes')">📄 Informes</button>
             <button class="tab" onclick="openTab('configuracion')">⚙️ Configuración</button>
         </div>
@@ -151,6 +150,13 @@
                             <input type="number" id="cantidadVenta" placeholder="0" min="1" onchange="calcularTotalVenta()">
                         </div>
                         <div class="form-group">
+                            <label>Tipo de Pago *</label>
+                            <select id="tipoVenta">
+                                <option value="efectivo">💵 Efectivo</option>
+                                <option value="transferencia">💳 Transferencia</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
                             <label>Precio Unitario ($)</label>
                             <input type="number" id="precioVenta" placeholder="0.00" step="0.01" min="0" readonly style="background: #e9ecef;">
                         </div>
@@ -169,7 +175,23 @@
                 <!-- Área para mostrar alertas -->
                 <div id="alertVenta"></div>
 
-                <!-- Tabla de ventas recientes -->
+                <!-- Tarjetas de balance -->
+                <div class="stats">
+                    <div class="stat-card stat-card-efectivo">
+                        <h4>💵 Ventas Efectivo</h4>
+                        <div class="value" id="ventasEfectivo">$0</div>
+                    </div>
+                    <div class="stat-card stat-card-transferencia">
+                        <h4>💳 Ventas Transferencia</h4>
+                        <div class="value" id="ventasTransferencia">$0</div>
+                    </div>
+                    <div class="stat-card stat-card-success">
+                        <h4>💰 Total Ventas</h4>
+                        <div class="value" id="totalVentasBalance">$0</div>
+                    </div>
+                </div>
+
+                <!-- Tabla de ventas -->
                 <h3 style="color: #667eea; margin-top: 30px;">Historial de Ventas</h3>
                 <div class="table-container">
                     <table>
@@ -178,6 +200,7 @@
                                 <th>Fecha</th>
                                 <th>Producto</th>
                                 <th>Cantidad</th>
+                                <th>Tipo</th>
                                 <th>Precio Unit.</th>
                                 <th>Total</th>
                                 <th>Observación</th>
@@ -186,7 +209,7 @@
                         </thead>
                         <tbody id="tablaVentas">
                             <tr>
-                                <td colspan="7" style="text-align: center; color: #6c757d;">No hay ventas registradas</td>
+                                <td colspan="8" style="text-align: center; color: #6c757d;">No hay ventas registradas</td>
                             </tr>
                         </tbody>
                     </table>
@@ -217,6 +240,13 @@
                             <input type="number" id="cantidadCompra" placeholder="0" min="1" onchange="calcularTotalCompra()">
                         </div>
                         <div class="form-group">
+                            <label>Tipo de Pago *</label>
+                            <select id="tipoCompra">
+                                <option value="efectivo">💸 Efectivo</option>
+                                <option value="transferencia">🏦 Transferencia</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
                             <label>Precio de Costo ($)</label>
                             <input type="number" id="precioCompra" placeholder="0.00" step="0.01" min="0" readonly style="background: #e9ecef;">
                         </div>
@@ -235,7 +265,23 @@
                 <!-- Área para mostrar alertas -->
                 <div id="alertCompra"></div>
 
-                <!-- Tabla de compras recientes -->
+                <!-- Tarjetas de balance -->
+                <div class="stats">
+                    <div class="stat-card stat-card-gasto-efectivo">
+                        <h4>💸 Compras Efectivo</h4>
+                        <div class="value" id="comprasEfectivo">$0</div>
+                    </div>
+                    <div class="stat-card stat-card-gasto-transferencia">
+                        <h4>🏦 Compras Transferencia</h4>
+                        <div class="value" id="comprasTransferencia">$0</div>
+                    </div>
+                    <div class="stat-card stat-card-danger">
+                        <h4>💸 Total Compras</h4>
+                        <div class="value" id="totalComprasBalance">$0</div>
+                    </div>
+                </div>
+
+                <!-- Tabla de compras -->
                 <h3 style="color: #667eea; margin-top: 30px;">Historial de Compras</h3>
                 <div class="table-container">
                     <table>
@@ -244,6 +290,7 @@
                                 <th>Fecha</th>
                                 <th>Producto</th>
                                 <th>Cantidad</th>
+                                <th>Tipo</th>
                                 <th>Precio Unit.</th>
                                 <th>Total</th>
                                 <th>Observación</th>
@@ -252,7 +299,7 @@
                         </thead>
                         <tbody id="tablaCompras">
                             <tr>
-                                <td colspan="7" style="text-align: center; color: #6c757d;">No hay compras registradas</td>
+                                <td colspan="8" style="text-align: center; color: #6c757d;">No hay compras registradas</td>
                             </tr>
                         </tbody>
                     </table>
@@ -260,117 +307,7 @@
             </div>
 
             <!-- ========================================== -->
-            <!-- TAB 4: MOVIMIENTOS -->
-            <!-- ========================================== -->
-            <div id="movimientos" class="tab-content">
-                
-                <!-- Formulario para registrar movimientos -->
-                <div class="form-section">
-                    <h3>➕ Registrar Otro Movimiento</h3>
-                    <p style="color: #6c757d; margin-bottom: 15px;">Para gastos/ingresos que NO sean ventas o compras de productos (alquiler, servicios, etc.)</p>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Fecha *</label>
-                            <input type="date" id="fechaMovimiento">
-                        </div>
-                        <div class="form-group">
-                            <label>Descripción *</label>
-                            <input type="text" id="descripcionMovimiento" placeholder="Ej: Pago de alquiler">
-                        </div>
-                        <div class="form-group">
-                            <label>Tipo *</label>
-                            <select id="tipoMovimiento">
-                                <option value="ingreso_efectivo">💵 Ingreso Efectivo</option>
-                                <option value="ingreso_transferencia">💳 Ingreso Transferencia</option>
-                                <option value="gasto_efectivo">💸 Gasto Efectivo</option>
-                                <option value="gasto_transferencia">🏦 Gasto Transferencia</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Monto ($) *</label>
-                            <input type="number" id="montoMovimiento" placeholder="0.00" step="0.01" min="0">
-                        </div>
-                    </div>
-                    <button class="btn btn-primary" onclick="agregarMovimiento()">💾 Guardar Movimiento</button>
-                </div>
-
-                <!-- Área para mostrar alertas -->
-                <div id="alertMovimiento"></div>
-
-                <!-- Filtros -->
-                <div class="filter-section">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Filtrar por Tipo</label>
-                            <select id="filtroTipo" onchange="filtrarMovimientos()">
-                                <option value="todos">Todos</option>
-                                <option value="ingreso_efectivo">💵 Ingreso Efectivo</option>
-                                <option value="ingreso_transferencia">💳 Ingreso Transferencia</option>
-                                <option value="gasto_efectivo">💸 Gasto Efectivo</option>
-                                <option value="gasto_transferencia">🏦 Gasto Transferencia</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Desde Fecha</label>
-                            <input type="date" id="filtroFechaDesde" onchange="filtrarMovimientos()">
-                        </div>
-                        <div class="form-group">
-                            <label>Hasta Fecha</label>
-                            <input type="date" id="filtroFechaHasta" onchange="filtrarMovimientos()">
-                        </div>
-                        <div class="form-group" style="display: flex; align-items: flex-end;">
-                            <button class="btn btn-secondary" onclick="limpiarFiltros()">🔄 Limpiar Filtros</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tarjetas de estadísticas financieras -->
-                <div class="stats">
-                    <div class="stat-card stat-card-efectivo">
-                        <h4>💵 Ingresos Efectivo</h4>
-                        <div class="value" id="totalIngresosEfectivo">$0</div>
-                    </div>
-                    <div class="stat-card stat-card-transferencia">
-                        <h4>💳 Ingresos Transferencia</h4>
-                        <div class="value" id="totalIngresosTransferencia">$0</div>
-                    </div>
-                    <div class="stat-card stat-card-gasto-efectivo">
-                        <h4>💸 Gastos Efectivo</h4>
-                        <div class="value" id="totalGastosEfectivo">$0</div>
-                    </div>
-                    <div class="stat-card stat-card-gasto-transferencia">
-                        <h4>🏦 Gastos Transferencia</h4>
-                        <div class="value" id="totalGastosTransferencia">$0</div>
-                    </div>
-                    <div class="stat-card">
-                        <h4>💵 Balance General</h4>
-                        <div class="value" id="balanceGeneral">$0</div>
-                    </div>
-                </div>
-
-                <!-- Tabla de movimientos -->
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Descripción</th>
-                                <th>Tipo</th>
-                                <th>Monto</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaMovimientos">
-                            <tr>
-                                <td colspan="5" style="text-align: center; color: #6c757d;">No hay movimientos registrados</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- ========================================== -->
-            <!-- TAB 5: INFORMES PDF -->
+            <!-- TAB 4: INFORMES PDF -->
             <!-- ========================================== -->
             <div id="informes" class="tab-content">
                 <div class="form-section">
@@ -402,15 +339,15 @@
                             <h4>Total Productos</h4>
                             <div class="value" id="resumenProductos">0</div>
                         </div>
-                        <div class="stat-card">
+                        <div class="stat-card stat-card-success">
                             <h4>Total Ventas</h4>
                             <div class="value" id="resumenVentas">0</div>
                         </div>
-                        <div class="stat-card">
+                        <div class="stat-card stat-card-danger">
                             <h4>Total Compras</h4>
                             <div class="value" id="resumenCompras">0</div>
                         </div>
-                        <div class="stat-card stat-card-success">
+                        <div class="stat-card">
                             <h4>Balance Total</h4>
                             <div class="value" id="resumenBalance">$0</div>
                         </div>
@@ -419,7 +356,7 @@
             </div>
 
             <!-- ========================================== -->
-            <!-- TAB 6: CONFIGURACIÓN -->
+            <!-- TAB 5: CONFIGURACIÓN -->
             <!-- ========================================== -->
             <div id="configuracion" class="tab-content">
                 <div class="form-section">
@@ -452,10 +389,6 @@
                                 <span class="stat-value" id="configTotalCompras">0</span>
                             </div>
                             <div class="stat-info-item">
-                                <span class="stat-label">Total de Movimientos:</span>
-                                <span class="stat-value" id="configTotalMovimientos">0</span>
-                            </div>
-                            <div class="stat-info-item">
                                 <span class="stat-label">Última actualización:</span>
                                 <span class="stat-value" id="configUltimaActualizacion">-</span>
                             </div>
@@ -464,7 +397,7 @@
 
                     <div class="config-section">
                         <h4>ℹ️ Información</h4>
-                        <p><strong>FactuManager Pro v3.0</strong></p>
+                        <p><strong>FactuManager Pro v4.0</strong></p>
                         <p style="margin-top: 10px; color: #6c757d; line-height: 1.6;">
                             Sistema de gestión de facturación con ventas y compras automáticas.
                             Control diferenciado de efectivo y transferencias.
