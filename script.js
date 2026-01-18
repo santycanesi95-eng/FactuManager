@@ -742,4 +742,268 @@ function actualizarTodasLasVistas() {
 
 function actualizarConfiguracion() {
     document.getElementById('configTotalProductos').textContent = productos.length;
-    document.getElementById('configTotal
+    document.getElementById('configTotalVentas').textContent = ventas.length;
+    document.getElementById('configTotalCompras').textContent = compras.length;
+    document.getElementById('configTotalMovimientos').textContent = movimientos.length;
+    
+    const datosGuardados = localStorage.getItem('factumanager_datos');
+    if (datosGuardados) {
+        const datos = JSON.parse(datosGuardados);
+        const fecha = new Date(datos.ultimaActualizacion);
+        document.getElementById('configUltimaActualizacion').textContent = fecha.toLocaleString('es-AR');
+    }
+}
+
+function actualizarResumenInformes() {
+    document.getElementById('resumenProductos').textContent = productos.length;
+    document.getElementById('resumenVentas').textContent = ventas.length;
+    document.getElementById('resumenCompras').textContent = compras.length;
+    
+    const totalIngresos = movimientos.filter(m => m.tipo.includes('ingreso')).reduce((sum, m) => sum + m.monto, 0);
+    const totalGastos = movimientos.filter(m => m.tipo.includes('gasto')).reduce((sum, m) => sum + m.monto, 0);
+    const balance = totalIngresos - totalGastos;
+    
+    document.getElementById('resumenBalance').textContent = ' + balance.toFixed(2);
+}
+
+/* ========================================== */
+/* GENERACIÓN DE PDF */
+/* ========================================== */
+
+function generarPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const fechaDesde = document.getElementById('pdfFechaDesde').value;
+    const fechaHasta = document.getElementById('pdfFechaHasta').value;
+
+    let productosFiltrados = [...productos];
+    let ventasFiltradas = [...ventas];
+    let comprasFiltradas = [...compras];
+    let movimientosFiltrados = [...movimientos];
+
+    if (fechaDesde && fechaHasta) {
+        ventasFiltradas = ventas.filter(v => v.fecha >= fechaDesde && v.fecha <= fechaHasta);
+        comprasFiltradas = compras.filter(c => c.fecha >= fechaDesde && c.fecha <= fechaHasta);
+        movimientosFiltrados = movimientos.filter(m => m.fecha >= fechaDesde && m.fecha <= fechaHasta);
+    }
+
+    // TÍTULO
+    doc.setFontSize(22);
+    doc.setTextColor(102, 126, 234);
+    doc.text('FactuManager Pro - Informe', 105, 20, { align: 'center' });
+
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    let subtitulo = `Generado: ${new Date().toLocaleDateString('es-AR')}`;
+    if (fechaDesde && fechaHasta) {
+        subtitulo += ` | Período: ${formatearFecha(fechaDesde)} - ${formatearFecha(fechaHasta)}`;
+    }
+    doc.text(subtitulo, 105, 28, { align: 'center' });
+
+    let yPos = 40;
+
+    // SECCIÓN: PRODUCTOS
+    doc.setFontSize(16);
+    doc.setTextColor(102, 126, 234);
+    doc.text('📦 Productos', 14, yPos);
+    yPos += 10;
+
+    if (productosFiltrados.length > 0) {
+        const productosData = productosFiltrados.map(p => [
+            p.nombre,
+            p.stockInicial,
+            p.stockActual,
+            p.stockMinimo || 5,
+            ' + p.precioCosto.toFixed(2),
+            ' + p.precioVenta.toFixed(2),
+            p.porcentaje + '%'
+        ]);
+
+        doc.autoTable({
+            startY: yPos,
+            head: [['Producto', 'Stock Ini.', 'Stock Act.', 'Stock Mín.', 'P. Costo', 'P. Venta', '%']],
+            body: productosData,
+            theme: 'grid',
+            headStyles: { fillColor: [102, 126, 234] },
+            styles: { fontSize: 8 }
+        });
+
+        yPos = doc.lastAutoTable.finalY + 10;
+    } else {
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text('No hay productos registrados', 14, yPos);
+        yPos += 15;
+    }
+
+    // SECCIÓN: VENTAS
+    if (yPos > 250) {
+        doc.addPage();
+        yPos = 20;
+    }
+
+    doc.setFontSize(16);
+    doc.setTextColor(102, 126, 234);
+    doc.text('🛒 Ventas', 14, yPos);
+    yPos += 10;
+
+    if (ventasFiltradas.length > 0) {
+        const ventasData = ventasFiltradas.map(v => [
+            formatearFecha(v.fecha),
+            v.productoNombre,
+            v.cantidad,
+            ' + v.precioUnitario.toFixed(2),
+            ' + v.total.toFixed(2)
+        ]);
+
+        doc.autoTable({
+            startY: yPos,
+            head: [['Fecha', 'Producto', 'Cant.', 'P. Unit.', 'Total']],
+            body: ventasData,
+            theme: 'grid',
+            headStyles: { fillColor: [40, 167, 69] },
+            styles: { fontSize: 8 }
+        });
+
+        yPos = doc.lastAutoTable.finalY + 10;
+
+        const totalVentas = ventasFiltradas.reduce((sum, v) => sum + v.total, 0);
+        doc.setFontSize(10);
+        doc.setTextColor(50);
+        doc.text(`Total Ventas: ${totalVentas.toFixed(2)}`, 14, yPos);
+        yPos += 15;
+    } else {
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text('No hay ventas en este período', 14, yPos);
+        yPos += 15;
+    }
+
+    // SECCIÓN: COMPRAS
+    if (yPos > 250) {
+        doc.addPage();
+        yPos = 20;
+    }
+
+    doc.setFontSize(16);
+    doc.setTextColor(102, 126, 234);
+    doc.text('📥 Compras', 14, yPos);
+    yPos += 10;
+
+    if (comprasFiltradas.length > 0) {
+        const comprasData = comprasFiltradas.map(c => [
+            formatearFecha(c.fecha),
+            c.productoNombre,
+            c.cantidad,
+            ' + c.precioUnitario.toFixed(2),
+            ' + c.total.toFixed(2)
+        ]);
+
+        doc.autoTable({
+            startY: yPos,
+            head: [['Fecha', 'Producto', 'Cant.', 'P. Unit.', 'Total']],
+            body: comprasData,
+            theme: 'grid',
+            headStyles: { fillColor: [220, 53, 69] },
+            styles: { fontSize: 8 }
+        });
+
+        yPos = doc.lastAutoTable.finalY + 10;
+
+        const totalCompras = comprasFiltradas.reduce((sum, c) => sum + c.total, 0);
+        doc.setFontSize(10);
+        doc.setTextColor(50);
+        doc.text(`Total Compras: ${totalCompras.toFixed(2)}`, 14, yPos);
+        yPos += 15;
+    } else {
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text('No hay compras en este período', 14, yPos);
+        yPos += 15;
+    }
+
+    // SECCIÓN: MOVIMIENTOS
+    if (yPos > 250) {
+        doc.addPage();
+        yPos = 20;
+    }
+
+    doc.setFontSize(16);
+    doc.setTextColor(102, 126, 234);
+    doc.text('💰 Otros Movimientos', 14, yPos);
+    yPos += 10;
+
+    const movimientosManuales = movimientosFiltrados.filter(m => m.origen === 'manual');
+
+    if (movimientosManuales.length > 0) {
+        const tiposNombres = {
+            'ingreso_efectivo': 'Ing. Efectivo',
+            'ingreso_transferencia': 'Ing. Transf.',
+            'gasto_efectivo': 'Gasto Efectivo',
+            'gasto_transferencia': 'Gasto Transf.'
+        };
+
+        const movimientosData = movimientosManuales.map(m => [
+            formatearFecha(m.fecha),
+            m.descripcion,
+            tiposNombres[m.tipo],
+            ' + m.monto.toFixed(2)
+        ]);
+
+        doc.autoTable({
+            startY: yPos,
+            head: [['Fecha', 'Descripción', 'Tipo', 'Monto']],
+            body: movimientosData,
+            theme: 'grid',
+            headStyles: { fillColor: [102, 126, 234] },
+            styles: { fontSize: 8 }
+        });
+
+        yPos = doc.lastAutoTable.finalY + 10;
+    } else {
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text('No hay otros movimientos en este período', 14, yPos);
+        yPos += 15;
+    }
+
+    // RESUMEN FINANCIERO
+    if (yPos > 240) {
+        doc.addPage();
+        yPos = 20;
+    }
+
+    doc.setFontSize(16);
+    doc.setTextColor(102, 126, 234);
+    doc.text('💵 Resumen Financiero', 14, yPos);
+    yPos += 10;
+
+    const ingresosEfectivo = movimientosFiltrados.filter(m => m.tipo === 'ingreso_efectivo').reduce((sum, m) => sum + m.monto, 0);
+    const ingresosTransferencia = movimientosFiltrados.filter(m => m.tipo === 'ingreso_transferencia').reduce((sum, m) => sum + m.monto, 0);
+    const gastosEfectivo = movimientosFiltrados.filter(m => m.tipo === 'gasto_efectivo').reduce((sum, m) => sum + m.monto, 0);
+    const gastosTransferencia = movimientosFiltrados.filter(m => m.tipo === 'gasto_transferencia').reduce((sum, m) => sum + m.monto, 0);
+    
+    const totalIngresos = ingresosEfectivo + ingresosTransferencia;
+    const totalGastos = gastosEfectivo + gastosTransferencia;
+    const balance = totalIngresos - totalGastos;
+
+    doc.setFontSize(10);
+    doc.setTextColor(50);
+    doc.text(`Ingresos Efectivo: ${ingresosEfectivo.toFixed(2)}`, 14, yPos);
+    yPos += 7;
+    doc.text(`Ingresos Transferencia: ${ingresosTransferencia.toFixed(2)}`, 14, yPos);
+    yPos += 7;
+    doc.text(`Gastos Efectivo: ${gastosEfectivo.toFixed(2)}`, 14, yPos);
+    yPos += 7;
+    doc.text(`Gastos Transferencia: ${gastosTransferencia.toFixed(2)}`, 14, yPos);
+    yPos += 10;
+    
+    doc.setFontSize(12);
+    doc.setTextColor(102, 126, 234);
+    doc.text(`BALANCE TOTAL: ${balance.toFixed(2)}`, 14, yPos);
+
+    // GUARDAR PDF
+    doc.save(`FactuManager_Informe_${new Date().toISOString().split('T')[0]}.pdf`);
+    alert('✅ PDF generado correctamente!');
+}
