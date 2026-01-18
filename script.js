@@ -763,7 +763,7 @@ function actualizarResumenInformes() {
     const totalGastos = movimientos.filter(m => m.tipo.includes('gasto')).reduce((sum, m) => sum + m.monto, 0);
     const balance = totalIngresos - totalGastos;
     
-    document.getElementById('resumenBalance').textContent = ' + balance.toFixed(2);
+    document.getElementById('resumenBalance').textContent = '$' + balance.toFixed(2);
 }
 
 /* ========================================== */
@@ -815,8 +815,8 @@ function generarPDF() {
             p.stockInicial,
             p.stockActual,
             p.stockMinimo || 5,
-            ' + p.precioCosto.toFixed(2),
-            ' + p.precioVenta.toFixed(2),
+            '$' + p.precioCosto.toFixed(2),
+            '$' + p.precioVenta.toFixed(2),
             p.porcentaje + '%'
         ]);
 
@@ -853,8 +853,8 @@ function generarPDF() {
             formatearFecha(v.fecha),
             v.productoNombre,
             v.cantidad,
-            ' + v.precioUnitario.toFixed(2),
-            ' + v.total.toFixed(2)
+           '$' + v.precioUnitario.toFixed(2),
+           '$' + v.total.toFixed(2)
         ]);
 
         doc.autoTable({
@@ -896,8 +896,8 @@ function generarPDF() {
             formatearFecha(c.fecha),
             c.productoNombre,
             c.cantidad,
-            ' + c.precioUnitario.toFixed(2),
-            ' + c.total.toFixed(2)
+           '$' + c.precioUnitario.toFixed(2),
+           '$' + c.total.toFixed(2)
         ]);
 
         doc.autoTable({
@@ -948,7 +948,7 @@ function generarPDF() {
             formatearFecha(m.fecha),
             m.descripcion,
             tiposNombres[m.tipo],
-            ' + m.monto.toFixed(2)
+            '$' + m.monto.toFixed(2)
         ]);
 
         doc.autoTable({
