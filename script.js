@@ -557,44 +557,483 @@ function generarPDF() {
             if (!ventasPorProducto[v.productoNombre]) {
                 ventasPorProducto[v.productoNombre] = {
                     cantidad: 0,
+                    efectivo: 0,
+                    transferencia: 0,
                     total: 0
                 };
             }
             ventasPorProducto[v.productoNombre].cantidad += v.cantidad;
+            if (v.tipo === 'efectivo') {
+                ventasPorProducto[v.productoNombre].efectivo += v.total;
+            } else {
+                ventasPorProducto[v.productoNombre].transferencia += v.total;
+            }
             ventasPorProducto[v.productoNombre].total += v.total;
         });
         
         const resumenData = Object.keys(ventasPorProducto).map(nombreProducto => [
-            nombreProducto,
-            ventasPorProducto[nombreProducto].cantidad + ' unidades',
-            '$' + ventasPorProducto[nombreProducto].total.toFixed(2)
+    nombreProducto,
+    ventasPorProducto[nombreProducto].cantidad + ' unidades',
+    '$' + ventasPorProducto[nombreProducto].efectivo.toFixed(2),
+    '$' + ventasPorProducto[nombreProducto].transferencia.toFixed(2),
+    '$' + ventasPorProducto[nombreProducto].total.toFixed(2)
+]);
+    
+    if (yPos > 230) { 
+        doc.addPage(); 
+        yPos = 20; 
+    }
+    
+    doc.setFontSize(16);
+    doc.setTextColor(102, 126, 234);
+    doc.text('Detalle de Ventas', 14, yPos);
+    yPos += 10;
+    
+    if (ventasFiltradas.length > 0) {
+        const ventasData = ventasFiltradas.map(v => [
+            formatearFecha(v.fecha), 
+            v.productoNombre, 
+            v.cantidad, 
+            v.tipo === 'efectivo' ? 'Efectivo' : 'Transf.', 
+            '$' + v.total.toFixed(2)
         ]);
+        
+        doc.autoTable({ 
+            startY: yPos, 
+            head: [['Fecha', 'Producto', 'Cant.', 'Tipo', 'Total']], 
+            body: ventasData, 
+            theme: 'grid', 
+            headStyles: { fillColor: [40, 167, 69] }, 
+            styles: { fontSize: 8 } 
+        });
+        
+        yPos = doc.lastAutoTable.finalY + 15;
+    }
+    
+    if (yPos > 230) { 
+        doc.addPage(); 
+        yPos = 20; 
+    }
+    
+    doc.setFontSize(16);
+    doc.setTextColor(102, 126, 234);
+    doc.text('Compras', 14, yPos);
+    yPos += 10;
+    
+    if (comprasFiltradas.length > 0) {
+        const comprasData = comprasFiltradas.map(c => [
+            formatearFecha(c.fecha), 
+            c.productoNombre, 
+            c.cantidad, 
+            c.tipo === 'efectivo' ? 'Efectivo' : 'Transf.', 
+            '$' + c.total.toFixed(2)
+        ]);
+        
+        doc.autoTable({ 
+            startY: yPos, 
+            head: [['Fecha', 'Producto', 'Cant.', 'Tipo', 'Total']], 
+            body: comprasData, 
+            theme: 'grid', 
+            headStyles: { fillColor: [220, 53, 69] }, 
+            styles: { fontSize: 8 } 
+        });
+        
+        yPos = doc.lastAutoTable.finalY + 10;
+        const totalCompras = comprasFiltradas.reduce((sum, c) => sum + c.total, 0);
+        doc.setFontSize(10);
+        doc.text('Total Compras: $' + totalCompras.toFixed(2), 14, yPos);
+    }
+    
+    doc.save('FactuManager_Informe_' + new Date().toISOString().split('T')[0] + '.pdf');
+    alert('PDF generado correctamente!');
+    
+    if (yPos > 230) { 
+        doc.addPage(); 
+        yPos = 20; 
+    }
+    
+    doc.setFontSize(16);
+    doc.setTextColor(102, 126, 234);
+    doc.text('Detalle de Ventas', 14, yPos);
+    yPos += 10;
+    
+    if (ventasFiltradas.length > 0) {
+        const ventasData = ventasFiltradas.map(v => [
+            formatearFecha(v.fecha), 
+            v.productoNombre, 
+            v.cantidad, 
+            v.tipo === 'efectivo' ? 'Efectivo' : 'Transf.', 
+            '$' + v.total.toFixed(2)
+        ]);
+        
+        doc.autoTable({ 
+            startY: yPos, 
+            head: [['Fecha', 'Producto', 'Cant.', 'Tipo', 'Total']], 
+            body: ventasData, 
+            theme: 'grid', 
+            headStyles: { fillColor: [40, 167, 69] }, 
+            styles: { fontSize: 8 } 
+        });
+        
+        yPos = doc.lastAutoTable.finalY + 15;
+    }
+    
+    if (yPos > 230) { 
+        doc.addPage(); 
+        yPos = 20; 
+    }
+    
+    doc.setFontSize(16);
+    doc.setTextColor(102, 126, 234);
+    doc.text('Compras', 14, yPos);
+    yPos += 10;
+    
+    if (comprasFiltradas.length > 0) {
+        const comprasData = comprasFiltradas.map(c => [
+            formatearFecha(c.fecha), 
+            c.productoNombre, 
+            c.cantidad, 
+            c.tipo === 'efectivo' ? 'Efectivo' : 'Transf.', 
+            '$' + c.total.toFixed(2)
+
+        ]);
+        
+        doc.autoTable({ 
+            startY: yPos, 
+            head: [['Fecha', 'Producto', 'Cant.', 'Tipo', 'Total']], 
+            body: comprasData, 
+            theme: 'grid', 
+            headStyles: { fillColor: [220, 53, 69] }, 
+            styles: { fontSize: 8 } 
+        });
+        
+        yPos = doc.lastAutoTable.finalY + 10;
+        const totalCompras = comprasFiltradas.reduce((sum, c) => sum + c.total, 0);
+        doc.setFontSize(10);
+        doc.text('Total Compras: $' + totalCompras.toFixed(2), 14, yPos);
+    }
+    
+    doc.save('FactuManager_Informe_' + new Date().toISOString().split('T')[0] + '.pdf');
+    alert('PDF generado correctamente!');
+    
+    if (yPos > 230) { 
+        doc.addPage(); 
+        yPos = 20; 
+    }
+    
+    doc.setFontSize(16);
+    doc.setTextColor(102, 126, 234);
+    doc.text('Detalle de Ventas', 14, yPos);
+    yPos += 10;
+    
+    if (ventasFiltradas.length > 0) {
+        const ventasData = ventasFiltradas.map(v => [
+            formatearFecha(v.fecha), 
+            v.productoNombre, 
+            v.cantidad, 
+            v.tipo === 'efectivo' ? 'Efectivo' : 'Transf.', 
+            '$' + v.total.toFixed(2)
+        ]);
+        
+        doc.autoTable({ 
+            startY: yPos, 
+            head: [['Fecha', 'Producto', 'Cant.', 'Tipo', 'Total']], 
+            body: ventasData, 
+            theme: 'grid', 
+            headStyles: { fillColor: [40, 167, 69] }, 
+            styles: { fontSize: 8 } 
+        });
+        
+        yPos = doc.lastAutoTable.finalY + 15;
+    }
+    
+    if (yPos > 230) { 
+        doc.addPage(); 
+        yPos = 20; 
+    }
+    
+    doc.setFontSize(16);
+    doc.setTextColor(102, 126, 234);
+    doc.text('Compras', 14, yPos);
+    yPos += 10;
+    
+    if (comprasFiltradas.length > 0) {
+        const comprasData = comprasFiltradas.map(c => [
+            formatearFecha(c.fecha), 
+            c.productoNombre, 
+            c.cantidad, 
+            c.tipo === 'efectivo' ? 'Efectivo' : 'Transf.', 
+            '$' + c.total.toFixed(2)
+        ]);
+        
+        doc.autoTable({ 
+            startY: yPos, 
+            head: [['Fecha', 'Producto', 'Cant.', 'Tipo', 'Total']], 
+            body: comprasData, 
+            theme: 'grid', 
+            headStyles: { fillColor: [220, 53, 69] }, 
+            styles: { fontSize: 8 } 
+        });
+        
+        yPos = doc.lastAutoTable.finalY + 10;
+        const totalCompras = comprasFiltradas.reduce((sum, c) => sum + c.total, 0);
+        doc.setFontSize(10);
+        doc.text('Total Compras: $' + totalCompras.toFixed(2), 14, yPos);
+    }
+    
+    doc.save('FactuManager_Informe_' + new Date().toISOString().split('T')[0] + '.pdf');
+    alert('PDF generado correctamente!');
+} + ventasPorProducto[nombreProducto].total.toFixed(2)
+        
         
         doc.autoTable({
             startY: yPos,
-            head: [['Producto', 'Unidades Vendidas', 'Total Vendido']],
+            head: [['Producto', 'Unidades', 'Efectivo', 'Transferencia', 'Total']],
             body: resumenData,
             theme: 'grid',
             headStyles: { fillColor: [40, 167, 69] },
-            styles: { fontSize: 9 }
+            styles: { fontSize: 8 }
         });
         
         yPos = doc.lastAutoTable.finalY + 10;
         
-        const totalGeneralVentas = ventasFiltradas.reduce((sum, v) => sum + v.total, 0);
-        doc.setFontSize(12);
+        const totalEfectivo = ventasFiltradas.filter(v => v.tipo === 'efectivo').reduce((sum, v) => sum + v.total, 0);
+        const totalTransferencia = ventasFiltradas.filter(v => v.tipo === 'transferencia').reduce((sum, v) => sum + v.total, 0);
+        const totalGeneralVentas = totalEfectivo + totalTransferencia;
+        
+        doc.setFontSize(11);
         doc.setTextColor(40, 167, 69);
         doc.setFont(undefined, 'bold');
-        doc.text('TOTAL GENERAL VENTAS: $' + totalGeneralVentas.toFixed(2), 14, yPos);
-        doc.setFont(undefined, 'normal');
-        yPos += 15;
-    } else {
-        doc.setFontSize(10);
-        doc.setTextColor(100);
-        doc.text('No hay ventas en este periodo', 14, yPos);
-        yPos += 15;
+        doc.text('TOTAL EFECTIVO: $' + totalEfectivo.toFixed(2), 14, yPos);
+    
+    if (yPos > 230) { 
+        doc.addPage(); 
+        yPos = 20; 
     }
     
+    doc.setFontSize(16);
+    doc.setTextColor(102, 126, 234);
+    doc.text('Detalle de Ventas', 14, yPos);
+    yPos += 10;
+    
+    if (ventasFiltradas.length > 0) {
+        const ventasData = ventasFiltradas.map(v => [
+            formatearFecha(v.fecha), 
+            v.productoNombre, 
+            v.cantidad, 
+            v.tipo === 'efectivo' ? 'Efectivo' : 'Transf.', 
+            '$' + v.total.toFixed(2)
+        ]);
+        
+        doc.autoTable({ 
+            startY: yPos, 
+            head: [['Fecha', 'Producto', 'Cant.', 'Tipo', 'Total']], 
+            body: ventasData, 
+            theme: 'grid', 
+            headStyles: { fillColor: [40, 167, 69] }, 
+            styles: { fontSize: 8 } 
+        });
+        
+        yPos = doc.lastAutoTable.finalY + 15;
+    }
+    
+    if (yPos > 230) { 
+        doc.addPage(); 
+        yPos = 20; 
+    }
+    
+    doc.setFontSize(16);
+    doc.setTextColor(102, 126, 234);
+    doc.text('Compras', 14, yPos);
+    yPos += 10;
+    
+    if (comprasFiltradas.length > 0) {
+        const comprasData = comprasFiltradas.map(c => [
+            formatearFecha(c.fecha), 
+            c.productoNombre, 
+            c.cantidad, 
+            c.tipo === 'efectivo' ? 'Efectivo' : 'Transf.', 
+            '$' + c.total.toFixed(2)
+        ]);
+        
+        doc.autoTable({ 
+            startY: yPos, 
+            head: [['Fecha', 'Producto', 'Cant.', 'Tipo', 'Total']], 
+            body: comprasData, 
+            theme: 'grid', 
+            headStyles: { fillColor: [220, 53, 69] }, 
+            styles: { fontSize: 8 } 
+        });
+        
+        yPos = doc.lastAutoTable.finalY + 10;
+        const totalCompras = comprasFiltradas.reduce((sum, c) => sum + c.total, 0);
+        doc.setFontSize(10);
+        doc.text('Total Compras: $' + totalCompras.toFixed(2), 14, yPos);
+
+    }
+    
+    doc.save('FactuManager_Informe_' + new Date().toISOString().split('T')[0] + '.pdf');
+    alert('PDF generado correctamente!');
+    doc.text('TOTAL EFECTIVO: $' + totalEfectivo.toFixed(2), 14, yPos);
+        yPos += 7;
+        doc.text('TOTAL TRANSFERENCIA: $' + totalTransferencia.toFixed(2), 14, yPos);
+    
+    if (yPos > 230) { 
+        doc.addPage(); 
+        yPos = 20; 
+    }
+    
+    doc.setFontSize(16);
+    doc.setTextColor(102, 126, 234);
+    doc.text('Detalle de Ventas', 14, yPos);
+    yPos += 10;
+    
+    if (ventasFiltradas.length > 0) {
+        const ventasData = ventasFiltradas.map(v => [
+            formatearFecha(v.fecha), 
+            v.productoNombre, 
+            v.cantidad, 
+            v.tipo === 'efectivo' ? 'Efectivo' : 'Transf.', 
+            '$' + v.total.toFixed(2)
+        ]);
+        
+        doc.autoTable({ 
+            startY: yPos, 
+            head: [['Fecha', 'Producto', 'Cant.', 'Tipo', 'Total']], 
+            body: ventasData, 
+            theme: 'grid', 
+            headStyles: { fillColor: [40, 167, 69] }, 
+            styles: { fontSize: 8 } 
+        });
+        
+        yPos = doc.lastAutoTable.finalY + 15;
+    }
+    
+    if (yPos > 230) { 
+        doc.addPage(); 
+        yPos = 20; 
+    }
+    
+    doc.setFontSize(16);
+    doc.setTextColor(102, 126, 234);
+    doc.text('Compras', 14, yPos);
+    yPos += 10;
+    
+    if (comprasFiltradas.length > 0) {
+        const comprasData = comprasFiltradas.map(c => [
+            formatearFecha(c.fecha), 
+            c.productoNombre, 
+            c.cantidad, 
+            c.tipo === 'efectivo' ? 'Efectivo' : 'Transf.', 
+            '$' + c.total.toFixed(2)
+        ]);
+        
+        doc.autoTable({ 
+            startY: yPos, 
+            head: [['Fecha', 'Producto', 'Cant.', 'Tipo', 'Total']], 
+            body: comprasData, 
+            theme: 'grid', 
+            headStyles: { fillColor: [220, 53, 69] }, 
+            styles: { fontSize: 8 } 
+        });
+        
+        yPos = doc.lastAutoTable.finalY + 10;
+        const totalCompras = comprasFiltradas.reduce((sum, c) => sum + c.total, 0);
+        doc.setFontSize(10);
+        doc.text('Total Compras: $' + totalCompras.toFixed(2), 14, yPos);
+    }
+    
+    doc.save('FactuManager_Informe_' + new Date().toISOString().split('T')[0] + '.pdf');
+    alert('PDF generado correctamente!');
+    doc.text('TOTAL TRANSFERENCIA: $' + totalTransferencia.toFixed(2), 14, yPos);
+        yPos += 7;
+        doc.setFontSize(12);
+        doc.text('TOTAL GENERAL VENTAS: $' + totalGeneralVentas.toFixed(2), 14, yPos);
+    
+    if (yPos > 230) { 
+        doc.addPage(); 
+        yPos = 20; 
+    }
+    
+    doc.setFontSize(16);
+    doc.setTextColor(102, 126, 234);
+    doc.text('Detalle de Ventas', 14, yPos);
+    yPos += 10;
+    
+    if (ventasFiltradas.length > 0) {
+        const ventasData = ventasFiltradas.map(v => [
+            formatearFecha(v.fecha), 
+            v.productoNombre, 
+            v.cantidad, 
+            v.tipo === 'efectivo' ? 'Efectivo' : 'Transf.', 
+            '$' + v.total.toFixed(2)
+        ]);
+        
+        doc.autoTable({ 
+            startY: yPos, 
+            head: [['Fecha', 'Producto', 'Cant.', 'Tipo', 'Total']], 
+            body: ventasData, 
+            theme: 'grid', 
+            headStyles: { fillColor: [40, 167, 69] }, 
+            styles: { fontSize: 8 } 
+        });
+        
+        yPos = doc.lastAutoTable.finalY + 15;
+    }
+    
+    if (yPos > 230) { 
+        doc.addPage(); 
+        yPos = 20; 
+    }
+    
+    doc.setFontSize(16);
+    doc.setTextColor(102, 126, 234);
+    doc.text('Compras', 14, yPos);
+    yPos += 10;
+    
+    if (comprasFiltradas.length > 0) {
+        const comprasData = comprasFiltradas.map(c => [
+            formatearFecha(c.fecha), 
+            c.productoNombre, 
+            c.cantidad, 
+            c.tipo === 'efectivo' ? 'Efectivo' : 'Transf.', 
+            '$' + c.total.toFixed(2)
+        ]);
+        
+        doc.autoTable({ 
+            startY: yPos, 
+            head: [['Fecha', 'Producto', 'Cant.', 'Tipo', 'Total']], 
+            body: comprasData, 
+            theme: 'grid', 
+            headStyles: { fillColor: [220, 53, 69] }, 
+            styles: { fontSize: 8 } 
+        });
+        
+        yPos = doc.lastAutoTable.finalY + 10;
+        const totalCompras = comprasFiltradas.reduce((sum, c) => sum + c.total, 0);
+        doc.setFontSize(10);
+        doc.text('Total Compras: $' + totalCompras.toFixed(2), 14, yPos);
+    }
+    
+    doc.save('FactuManager_Informe_' + new Date().toISOString().split('T')[0] + '.pdf');
+    alert('PDF generado correctamente!');
+    doc.text('TOTAL GENERAL VENTAS: $' + totalGeneralVentas.toFixed(2), 14, yPos);
+        doc.setFont(undefined, 'normal');
+        yPos += 15;
+    if (ventasFiltradas.length > 0) {
+    const totalGeneralVentas = ventasFiltradas.reduce((sum, v) => sum + v.total, 0);
+    doc.setFontSize(12);
+    doc.setTextColor(40, 167, 69);
+    doc.setFont(undefined, 'bold');
+    doc.text('TOTAL GENERAL VENTAS: $' + totalGeneralVentas.toFixed(2), 14, yPos);
+    doc.setFont(undefined, 'normal');
+    yPos += 15;
+} else {
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text('No hay ventas en este periodo', 14, yPos);
+    yPos += 15;
+}
     if (yPos > 230) { 
         doc.addPage(); 
         yPos = 20; 
