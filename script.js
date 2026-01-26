@@ -235,6 +235,25 @@ function cargarProductosEnSelectores() {
     selectCompra.innerHTML = opciones;
 }
 
+function cargarPrecioVenta() {
+    const productoId = parseInt(document.getElementById('productoVenta').value);
+    const producto = productos.find(p => p.id === productoId);
+    if (!producto) return;
+
+    document.getElementById('precioVenta').value = producto.precioVenta.toFixed(2);
+    calcularTotalVenta();
+}
+
+function cargarPrecioCompra() {
+    const productoId = parseInt(document.getElementById('productoCompra').value);
+    const producto = productos.find(p => p.id === productoId);
+    if (!producto) return;
+
+    document.getElementById('precioCompra').value = producto.precioCosto.toFixed(2);
+    calcularTotalCompra();
+}
+
+
 function calcularTotalVenta() {
     const cantidad = parseInt(document.getElementById('cantidadVenta').value) || 0;
     const precio = parseFloat(document.getElementById('precioVenta').value) || 0;
