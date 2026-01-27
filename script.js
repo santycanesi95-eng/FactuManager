@@ -599,12 +599,12 @@ function generarPDF() {
         doc.setFontSize(11);
         doc.setTextColor(40, 167, 69);
         doc.setFont(undefined, 'bold');
-        doc.text('TOTAL EFECTIVO:  + totalEfectivo.toFixed(2), 14, yPos);
+        doc.text('TOTAL EFECTIVO: $' + totalEfectivo.toFixed(2), 14, yPos);
         yPos += 7;
-        doc.text('TOTAL TRANSFERENCIA:  + totalTransferencia.toFixed(2), 14, yPos);
+        doc.text('TOTAL TRANSFERENCIA: $' + totalTransferencia.toFixed(2), 14, yPos);
         yPos += 7;
         doc.setFontSize(12);
-        doc.text('TOTAL GENERAL VENTAS:  + totalGeneralVentas.toFixed(2), 14, yPos);
+        doc.text('TOTAL GENERAL VENTAS: $' + totalGeneralVentas.toFixed(2), 14, yPos);
         doc.setFont(undefined, 'normal');
         yPos += 15;
     } else {
@@ -630,7 +630,7 @@ function generarPDF() {
             v.productoNombre, 
             v.cantidad, 
             v.tipo === 'efectivo' ? 'Efectivo' : 'Transf.', 
-            ' + v.total.toFixed(2)
+            '$' + v.total.toFixed(2)
         ]);
         
         doc.autoTable({ 
@@ -661,7 +661,7 @@ function generarPDF() {
             c.productoNombre, 
             c.cantidad, 
             c.tipo === 'efectivo' ? 'Efectivo' : 'Transf.', 
-            ' + c.total.toFixed(2)
+            '$' + c.total.toFixed(2)
         ]);
         
         doc.autoTable({ 
@@ -678,7 +678,7 @@ function generarPDF() {
         doc.setFontSize(10);
         doc.setTextColor(220, 53, 69);
         doc.setFont(undefined, 'bold');
-        doc.text('Total Compras:  + totalCompras.toFixed(2), 14, yPos);
+        doc.text('Total Compras: $' + totalCompras.toFixed(2), 14, yPos);
     }
     
     doc.save('FactuManager_Informe_' + new Date().toISOString().split('T')[0] + '.pdf');
