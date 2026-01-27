@@ -154,6 +154,38 @@ function agregarProducto() {
     cargarProductosEnSelectores();
 }
 
+function actualizarPrecioProducto() {
+    const productoId = document.getElementById('productoEditar').value;
+    const nuevoPrecio = parseFloat(document.getElementById('nuevoPrecio').value);
+
+    if (!productoId) {
+        alert('Seleccioná un producto');
+        return;
+    }
+
+    if (isNaN(nuevoPrecio) || nuevoPrecio <= 0) {
+        alert('Ingresá un precio válido');
+        return;
+    }
+
+    const producto = productos.find(p => p.id === Number(productoId));
+
+    if (!producto) {
+        alert('Producto no encontrado');
+        return;
+    }
+
+    producto.precioVenta = nuevoPrecio;
+    producto.porcentaje = ((producto.precioVenta - producto.precioCosto) / producto.precioCosto * 100).toFixed(2);
+
+    guardarEnLocalStorage();
+    actualizarTodasLasVistas();
+    cargarProductosEnSelectores();
+
+    alert('Precio actualizado correctamente');
+}
+
+
 function editarProducto(id) {
     const producto = productos.find(p => p.id === id);
     if (!producto) return;
