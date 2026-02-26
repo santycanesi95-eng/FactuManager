@@ -10,7 +10,7 @@ let productoEditando = null;
 /* ========================================== */
 /* INICIALIZACIÓN */
 /* ========================================== */
-
+/*
 window.addEventListener('DOMContentLoaded', function() {
     cargarDatosDesdeLocalStorage();
     document.getElementById('fechaVenta').valueAsDate = new Date();
@@ -19,7 +19,7 @@ window.addEventListener('DOMContentLoaded', function() {
     actualizarTodasLasVistas();
     cargarProductosEnSelectores();
 });
-
+/* Comentario de Bloqueo
 /* ========================================== */
 /* PERSISTENCIA CON LOCALSTORAGE */
 /* ========================================== */
