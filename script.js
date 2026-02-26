@@ -24,7 +24,7 @@ window.addEventListener('DOMContentLoaded', function() {
 /* PERSISTENCIA CON LOCALSTORAGE */
 /* ========================================== */
 
-function guardarEnLocalStorage() {
+/*function guardarEnLocalStorage() {
     const datos = {
         productos: productos,
         ventas: ventas,
