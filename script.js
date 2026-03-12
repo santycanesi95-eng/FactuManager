@@ -11,7 +11,7 @@ let productoEditando = null;
 /* INICIALIZACIÓN */
 /* ========================================== */
 
-window.addEventListener('DOMContentLoaded', function() {
+/*window.addEventListener('DOMContentLoaded', function() {
     cargarDatosDesdeLocalStorage();
     document.getElementById('fechaVenta').valueAsDate = new Date();
     document.getElementById('fechaCompra').valueAsDate = new Date();
@@ -24,7 +24,7 @@ window.addEventListener('DOMContentLoaded', function() {
 /* PERSISTENCIA CON LOCALSTORAGE */
 /* ========================================== */
 
-function guardarEnLocalStorage() {
+/*function guardarEnLocalStorage() {
     const datos = {
         productos: productos,
         ventas: ventas,
@@ -111,7 +111,7 @@ function importarDatos(event) {
 /* GESTIÓN DE PRODUCTOS */
 /* ========================================== */
 
-function agregarProducto() {
+/*function agregarProducto() {
     const nombre = document.getElementById('nombreProducto').value.trim();
     const stockInicial = parseInt(document.getElementById('stockInicial').value) || 0;
     const stockActual = parseInt(document.getElementById('stockActual').value) || 0;
@@ -259,7 +259,7 @@ function limpiarFormularioProducto() {
 /* GESTIÓN DE VENTAS */
 /* ========================================== */
 
-function cargarProductosEnSelectores() {
+/*function cargarProductosEnSelectores() {
     const selectVenta = document.getElementById('productoVenta');
     const selectCompra = document.getElementById('productoCompra');
     const opciones = '<option value="">Seleccione un producto</option>' + productos.map(p => '<option value="' + p.id + '">' + p.nombre + ' (Stock: ' + p.stockActual + ')</option>').join('');
@@ -375,7 +375,7 @@ function actualizarBalanceVentas() {
 /* GESTIÓN DE COMPRAS */
 /* ========================================== */
 
-function calcularTotalCompra() {
+/*function calcularTotalCompra() {
     const cantidad = parseInt(document.getElementById('cantidadCompra').value) || 0;
     const precio = parseFloat(document.getElementById('precioCompra').value) || 0;
     document.getElementById('totalCompra').value = (cantidad * precio).toFixed(2);
@@ -463,7 +463,7 @@ function actualizarBalanceCompras() {
 /* FUNCIONES GENERALES */
 /* ========================================== */
 
-function openTab(tabName) {
+/*function openTab(tabName) {
     const tabs = document.querySelectorAll('.tab');
     const contents = document.querySelectorAll('.tab-content');
     tabs.forEach(tab => tab.classList.remove('active'));
@@ -520,7 +520,7 @@ function actualizarResumenInformes() {
 /* GENERACIÓN DE PDF CON RESUMEN POR PRODUCTO */
 /* ========================================== */
 
-function generarPDF() {
+/*function generarPDF() {
     const jsPDF = window.jspdf.jsPDF;
     const doc = new jsPDF();
     const fechaDesde = document.getElementById('pdfFechaDesde').value;
